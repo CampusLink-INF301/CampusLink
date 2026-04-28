@@ -8,6 +8,8 @@
     "apps/backend"
   ],
   "scripts": {
+    "build": "npm run build --workspace=apps/backend",
+    "start": "node apps/backend/dist/main",
     "dev:frontend": "npm run dev --workspace=apps/frontend",
     "dev:backend": "npm run start:dev --workspace=apps/backend",
     "test:e2e": "npm run test:e2e --workspace=apps/frontend",
