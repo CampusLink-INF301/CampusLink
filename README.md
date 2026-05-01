@@ -19,13 +19,13 @@ CampusLink es una plataforma web para la comunidad universitaria donde estudiant
 
 | Recurso | Link |
 |---|---|
-| Video Entrega 1 | _[pendiente — agregar link YouTube]_ |
-| Wiki del proyecto | _[pendiente — agregar link GitHub Wiki]_ |
-| Tablero JIRA | _[pendiente — agregar link JIRA]_ |
-| Servidor Discord | _[pendiente — agregar link Discord]_ |
-| Release v1.0-entrega1 | _[pendiente — agregar link Release]_ |
-| Frontend (Vercel) | _[pendiente — agregar URL Vercel]_ |
-| Backend (Railway) | _[pendiente — agregar URL Railway]_ |
+| 🎥 Video Entrega 1 | _[pendiente — agregar link YouTube]_ |
+| 📚 Wiki del proyecto | [GitHub Wiki](https://github.com/CampusLink-INF301/CampusLink/wiki) |
+| 📊 Tablero JIRA | _[pendiente — agregar link JIRA]_ |
+| 💬 Servidor Discord | _[pendiente — agregar link Discord]_ |
+| 🏷️ Release v1.0-entrega1 | [GitHub Release](https://github.com/CampusLink-INF301/CampusLink/releases/tag/v1.0-entrega1) |
+| 🌐 Frontend (Vercel) | _[pendiente — agregar URL Vercel]_ |
+| ⚙️ Backend (Railway) | _[pendiente — agregar URL Railway]_ |
 
 ---
 
@@ -290,4 +290,9 @@ MIT License — ver [LICENSE](LICENSE)
 
 Este proyecto fue desarrollado en el contexto del curso **INF-301** (Pruebas de Software), 2026.
 
+**Estado actual:** `v1.0-entrega1` (MVP + Pruebas Unitarias)  
+**Próxima entrega:** Entrega 2 (E2E tests + integración)
+
 Para reportar problemas o contribuir, abrir un Issue o Pull Request en este repositorio.
+
+---
