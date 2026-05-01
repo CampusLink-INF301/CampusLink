@@ -33,6 +33,9 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+# Claude Code (AI assistant local config — machine-specific)
+.claude/
+
 # Editor
 .vscode/
 .idea/
