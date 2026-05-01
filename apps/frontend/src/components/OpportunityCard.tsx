@@ -13,51 +13,35 @@ export function OpportunityCard({ opportunity, onDelete }: Props) {
     : null;
 
   return (
-    <article
-      data-testid="opportunity-card"
-      style={{
-        border: '1px solid #ddd',
-        borderRadius: 8,
-        padding: '1rem',
-        marginBottom: '1rem',
-        background: '#fff',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <span
-            style={{
-              background: '#e0f0ff',
-              borderRadius: 4,
-              padding: '2px 8px',
-              fontSize: 12,
-              marginBottom: 4,
-              display: 'inline-block',
-            }}
-          >
+    <article className="card" data-testid="opportunity-card">
+      <div className="card-row">
+        <div className="card-content">
+          <span className={`badge badge-${opportunity.type}`}>
             {OPPORTUNITY_TYPE_LABELS[opportunity.type]}
           </span>
-          <h3 style={{ margin: '4px 0' }}>
-            <Link to={`/opportunities/${opportunity.id}`} style={{ color: '#1a1a1a', textDecoration: 'none' }}>
-              {opportunity.title}
-            </Link>
-          </h3>
-          <p style={{ color: '#555', margin: '4px 0', fontSize: 14 }}>
+          <Link to={`/opportunities/${opportunity.id}`} className="card-title">
+            {opportunity.title}
+          </Link>
+          <p className="card-desc">
             {opportunity.description.length > 120
-              ? opportunity.description.slice(0, 120) + '…'
+              ? `${opportunity.description.slice(0, 120)}…`
               : opportunity.description}
           </p>
-          {deadline && <p style={{ fontSize: 12, color: '#888' }}>Fecha límite: {deadline}</p>}
+          {deadline && (
+            <p className="card-meta">Fecha límite: {deadline}</p>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 12 }}>
+        <div className="card-actions">
           <Link to={`/opportunities/${opportunity.id}/edit`}>
-            <button aria-label="Editar oportunidad">Editar</button>
+            <button className="btn btn-secondary btn-sm" aria-label="Editar oportunidad">
+              Editar
+            </button>
           </Link>
           {onDelete && (
             <button
+              className="btn btn-danger btn-sm"
               aria-label="Eliminar oportunidad"
               onClick={() => onDelete(opportunity.id)}
-              style={{ background: '#fdd', borderColor: '#f99' }}
             >
               Eliminar
             </button>

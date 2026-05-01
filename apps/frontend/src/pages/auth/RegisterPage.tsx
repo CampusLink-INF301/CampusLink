@@ -22,25 +22,63 @@ export function RegisterPage() {
   };
 
   return (
-    <main style={{ maxWidth: 400, margin: '4rem auto', padding: '1.5rem' }}>
-      <h1>Registro</h1>
-      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <label>
-          Nombre
-          <input data-testid="register-name" value={name} onChange={(e) => setName(e.target.value)} required style={{ display: 'block', width: '100%', marginTop: 4 }} />
-        </label>
-        <label>
-          Email
-          <input data-testid="register-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ display: 'block', width: '100%', marginTop: 4 }} />
-        </label>
-        <label>
-          Contraseña
-          <input data-testid="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={{ display: 'block', width: '100%', marginTop: 4 }} />
-        </label>
-        <button type="submit" data-testid="btn-register">Registrarse</button>
-        <p>¿Ya tienes cuenta? <Link to="/login">Ingresar</Link></p>
-      </form>
-    </main>
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <h1>Crear cuenta</h1>
+        <p className="auth-subtitle">Únete a la comunidad de CampusLink</p>
+
+        {error && <p className="form-error" role="alert">{error}</p>}
+
+        <form onSubmit={handleSubmit} className="form">
+          <div className="form-group">
+            <label className="form-label">Nombre completo</label>
+            <input
+              className="form-input"
+              data-testid="register-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Tu nombre"
+              autoComplete="name"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input
+              className="form-input"
+              data-testid="register-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="tu@email.com"
+              autoComplete="email"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Contraseña</label>
+            <input
+              className="form-input"
+              data-testid="register-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              placeholder="Mínimo 6 caracteres"
+              autoComplete="new-password"
+            />
+          </div>
+          <button type="submit" data-testid="btn-register" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+            Crear cuenta
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          ¿Ya tienes cuenta?{' '}
+          <Link to="/login">Ingresar</Link>
+        </p>
+      </div>
+    </div>
   );
 }

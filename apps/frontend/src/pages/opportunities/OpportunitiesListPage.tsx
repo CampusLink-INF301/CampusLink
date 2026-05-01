@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { opportunitiesApi } from '../../api/opportunities';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import { SearchBar } from '../../components/SearchBar';
-import type { Opportunity } from '../../types/opportunity';
-import type { OpportunityType } from '../../types/opportunity';
+import type { Opportunity, OpportunityType } from '../../types/opportunity';
 
 export function OpportunitiesListPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -33,21 +32,30 @@ export function OpportunitiesListPage() {
   };
 
   return (
-    <main style={{ maxWidth: 800, margin: '0 auto', padding: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+    <main className="page">
+      <div className="page-header">
         <h1>Oportunidades</h1>
-        <Link to="/opportunities/new">
-          <button data-testid="btn-new-opportunity">+ Nueva oportunidad</button>
+        <Link to="/opportunities/new" className="btn btn-primary" data-testid="btn-new-opportunity">
+          + Nueva oportunidad
         </Link>
       </div>
 
       <SearchBar onSearch={load} />
 
-      {loading && <p>Cargando...</p>}
-      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
+      {loading && <p className="loading-text">Cargando oportunidades…</p>}
+
+      {error && <p className="form-error" role="alert">{error}</p>}
+
       {!loading && !error && opportunities.length === 0 && (
-        <p data-testid="empty-message">No hay oportunidades disponibles.</p>
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <p data-testid="empty-message">No hay oportunidades disponibles.</p>
+          <p style={{ fontSize: 13, marginTop: 6 }}>
+            <Link to="/opportunities/new">Publica la primera oportunidad</Link>
+          </p>
+        </div>
       )}
+
       {!loading && opportunities.map((o) => (
         <OpportunityCard key={o.id} opportunity={o} onDelete={handleDelete} />
       ))}

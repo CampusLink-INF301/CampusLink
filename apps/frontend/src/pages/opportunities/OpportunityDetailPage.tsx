@@ -23,45 +23,60 @@ export function OpportunityDetailPage() {
     navigate('/opportunities');
   };
 
-  if (loading) return <p>Cargando...</p>;
-  if (!opportunity) return <p>Oportunidad no encontrada.</p>;
+  if (loading) return <p className="loading-text">Cargando…</p>;
+  if (!opportunity) return <p className="loading-text">Oportunidad no encontrada.</p>;
 
   const deadline = opportunity.deadline
     ? new Date(opportunity.deadline).toLocaleDateString('es-CL')
-    : 'Sin fecha límite';
+    : null;
 
   return (
-    <main style={{ maxWidth: 700, margin: '0 auto', padding: '1.5rem' }}>
-      <Link to="/opportunities">← Volver</Link>
-      <article data-testid="opportunity-detail" style={{ marginTop: '1rem' }}>
-        <span style={{ background: '#e0f0ff', borderRadius: 4, padding: '2px 8px', fontSize: 12 }}>
+    <main className="page">
+      <Link to="/opportunities" className="back-link">← Volver a oportunidades</Link>
+
+      <div className="detail-card" data-testid="opportunity-detail">
+        <span className={`badge badge-${opportunity.type}`}>
           {OPPORTUNITY_TYPE_LABELS[opportunity.type]}
         </span>
-        <h1 data-testid="opportunity-title" style={{ marginTop: 8 }}>{opportunity.title}</h1>
-        <p data-testid="opportunity-description">{opportunity.description}</p>
+        <h1 data-testid="opportunity-title">{opportunity.title}</h1>
+
+        <div className="detail-section">
+          <h3>Descripción</h3>
+          <p data-testid="opportunity-description">{opportunity.description}</p>
+        </div>
+
         {opportunity.requirements && (
-          <section>
+          <div className="detail-section">
             <h3>Requisitos</h3>
             <p data-testid="opportunity-requirements">{opportunity.requirements}</p>
-          </section>
+          </div>
         )}
-        <p><strong>Fecha límite:</strong> {deadline}</p>
-        <p style={{ color: '#888', fontSize: 12 }}>
-          Publicado: {new Date(opportunity.createdAt).toLocaleDateString('es-CL')}
-        </p>
-        <div style={{ display: 'flex', gap: 8, marginTop: '1rem' }}>
+
+        <div className="detail-meta">
+          {deadline && (
+            <span className="detail-meta-item">
+              <strong>Fecha límite:</strong> {deadline}
+            </span>
+          )}
+          <span className="detail-meta-item">
+            <strong>Publicado:</strong>{' '}
+            {new Date(opportunity.createdAt).toLocaleDateString('es-CL')}
+          </span>
+        </div>
+
+        <div className="detail-actions">
           <Link to={`/opportunities/${opportunity.id}/edit`}>
-            <button data-testid="btn-edit">Editar</button>
+            <button className="btn btn-secondary" data-testid="btn-edit">Editar</button>
           </Link>
           <button
+            className="btn btn-danger"
             data-testid="btn-delete"
             onClick={handleDelete}
-            style={{ background: '#fdd', borderColor: '#f99' }}
           >
             Eliminar
           </button>
         </div>
-      </article>
+      </div>
     </main>
   );
 }

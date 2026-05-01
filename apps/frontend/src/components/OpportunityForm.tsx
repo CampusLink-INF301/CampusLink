@@ -9,13 +9,13 @@ interface Props {
 }
 
 export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar' }: Props) {
-  const [title, setTitle] = useState(initial.title ?? '');
-  const [description, setDescription] = useState(initial.description ?? '');
-  const [type, setType] = useState<OpportunityType>(initial.type ?? OpportunityType.OTRO);
+  const [title, setTitle]               = useState(initial.title ?? '');
+  const [description, setDescription]   = useState(initial.description ?? '');
+  const [type, setType]                 = useState<OpportunityType>(initial.type ?? OpportunityType.OTRO);
   const [requirements, setRequirements] = useState(initial.requirements ?? '');
-  const [deadline, setDeadline] = useState(initial.deadline?.slice(0, 10) ?? '');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [deadline, setDeadline]         = useState(initial.deadline?.slice(0, 10) ?? '');
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,75 +37,82 @@ export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: 600 }}>
-      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
+    <form onSubmit={handleSubmit} className="form">
+      {error && <p className="form-error" role="alert">{error}</p>}
 
-      <label>
-        Título *
+      <div className="form-group">
+        <label className="form-label">Título *</label>
         <input
+          className="form-input"
           data-testid="input-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
           placeholder="Ej: Tutoría de Cálculo II"
-          style={{ display: 'block', width: '100%', marginTop: 4 }}
         />
-      </label>
+      </div>
 
-      <label>
-        Tipo *
+      <div className="form-group">
+        <label className="form-label">Tipo *</label>
         <select
+          className="form-select"
           data-testid="select-type"
           value={type}
           onChange={(e) => setType(e.target.value as OpportunityType)}
           required
-          style={{ display: 'block', width: '100%', marginTop: 4 }}
         >
           {Object.values(OpportunityType).map((t) => (
             <option key={t} value={t}>{OPPORTUNITY_TYPE_LABELS[t]}</option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <label>
-        Descripción *
+      <div className="form-group">
+        <label className="form-label">Descripción *</label>
         <textarea
+          className="form-textarea"
           data-testid="input-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
           rows={4}
           placeholder="Describe la oportunidad en detalle..."
-          style={{ display: 'block', width: '100%', marginTop: 4 }}
         />
-      </label>
+      </div>
 
-      <label>
-        Requisitos
+      <div className="form-group">
+        <label className="form-label">
+          Requisitos <span>(opcional)</span>
+        </label>
         <textarea
+          className="form-textarea"
           data-testid="input-requirements"
           value={requirements}
           onChange={(e) => setRequirements(e.target.value)}
           rows={2}
           placeholder="Requisitos opcionales..."
-          style={{ display: 'block', width: '100%', marginTop: 4 }}
         />
-      </label>
+      </div>
 
-      <label>
-        Fecha límite
+      <div className="form-group">
+        <label className="form-label">
+          Fecha límite <span>(opcional)</span>
+        </label>
         <input
+          className="form-input"
           data-testid="input-deadline"
           type="date"
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
-          style={{ display: 'block', marginTop: 4 }}
+          style={{ maxWidth: 200 }}
         />
-      </label>
+      </div>
 
-      <button type="submit" disabled={loading} data-testid="btn-submit">
-        {loading ? 'Guardando…' : submitLabel}
-      </button>
+      <div className="form-actions">
+        <button type="submit" disabled={loading} data-testid="btn-submit" className="btn btn-primary">
+          {loading ? 'Guardando…' : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

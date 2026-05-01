@@ -10,19 +10,21 @@ export function Navbar() {
   };
 
   return (
-    <nav style={{ background: '#1a73e8', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Link to="/opportunities" style={{ color: '#fff', fontWeight: 700, textDecoration: 'none', fontSize: 20 }}>
+    <nav className="navbar">
+      <Link to="/opportunities" className="navbar-brand">
         CampusLink
       </Link>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        <Link to="/opportunities" style={{ color: '#fff', textDecoration: 'none' }}>Oportunidades</Link>
-        <Link to="/opportunities/new" style={{ color: '#fff', textDecoration: 'none' }}>+ Publicar</Link>
+      <div className="navbar-links">
+        <Link to="/opportunities" className="nav-link">Oportunidades</Link>
+        <Link to="/opportunities/new" className="btn btn-primary btn-sm">
+          + Publicar
+        </Link>
         {token ? (
-          <button onClick={handleLogout} style={{ background: 'transparent', color: '#fff', border: '1px solid #fff', borderRadius: 4, cursor: 'pointer' }}>
+          <button onClick={handleLogout} className="btn btn-logout btn-sm">
             Salir
           </button>
         ) : (
-          <Link to="/login" style={{ color: '#fff', textDecoration: 'none' }}>Ingresar</Link>
+          <Link to="/login" className="nav-link">Ingresar</Link>
         )}
       </div>
     </nav>

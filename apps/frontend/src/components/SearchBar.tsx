@@ -14,31 +14,39 @@ export function SearchBar({ onSearch }: Props) {
     onSearch(search, type || undefined);
   };
 
+  const handleClear = () => {
+    setSearch('');
+    setType('');
+    onSearch('', undefined);
+  };
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: '1rem' }}>
+    <form onSubmit={handleSubmit} className="search-bar">
       <input
         data-testid="search-input"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Buscar oportunidad..."
-        style={{ flex: 1, minWidth: 200 }}
       />
+      <div className="search-divider" />
       <select
         data-testid="filter-type"
         value={type}
         onChange={(e) => setType(e.target.value as OpportunityType | '')}
-        style={{ minWidth: 160 }}
       >
         <option value="">Todos los tipos</option>
         {Object.values(OpportunityType).map((t) => (
           <option key={t} value={t}>{OPPORTUNITY_TYPE_LABELS[t]}</option>
         ))}
       </select>
-      <button type="submit" data-testid="btn-search">Buscar</button>
+      <button type="submit" data-testid="btn-search" className="btn btn-primary btn-sm">
+        Buscar
+      </button>
       <button
         type="button"
         data-testid="btn-clear"
-        onClick={() => { setSearch(''); setType(''); onSearch('', undefined); }}
+        className="btn btn-ghost btn-sm"
+        onClick={handleClear}
       >
         Limpiar
       </button>

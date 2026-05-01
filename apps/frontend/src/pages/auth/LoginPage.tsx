@@ -21,21 +21,50 @@ export function LoginPage() {
   };
 
   return (
-    <main style={{ maxWidth: 400, margin: '4rem auto', padding: '1.5rem' }}>
-      <h1>Ingresar</h1>
-      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <label>
-          Email
-          <input data-testid="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ display: 'block', width: '100%', marginTop: 4 }} />
-        </label>
-        <label>
-          Contraseña
-          <input data-testid="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ display: 'block', width: '100%', marginTop: 4 }} />
-        </label>
-        <button type="submit" data-testid="btn-login">Ingresar</button>
-        <p>¿No tienes cuenta? <Link to="/register">Regístrate</Link></p>
-      </form>
-    </main>
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <h1>Bienvenido</h1>
+        <p className="auth-subtitle">Ingresa a tu cuenta de CampusLink</p>
+
+        {error && <p className="form-error" role="alert">{error}</p>}
+
+        <form onSubmit={handleSubmit} className="form">
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input
+              className="form-input"
+              data-testid="login-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="tu@email.com"
+              autoComplete="email"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Contraseña</label>
+            <input
+              className="form-input"
+              data-testid="login-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
+          </div>
+          <button type="submit" data-testid="btn-login" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+            Ingresar
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          ¿No tienes cuenta?{' '}
+          <Link to="/register">Regístrate gratis</Link>
+        </p>
+      </div>
+    </div>
   );
 }
