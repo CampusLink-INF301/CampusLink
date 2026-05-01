@@ -32,6 +32,7 @@ Bienvenido a la documentación del proyecto **CampusLink — Red de Oportunidade
 
 ## Recursos
 
-- [Release v1.0-entrega1](<!-- link al release -->) — tag en GitHub
-- [Video Entrega 1](<!-- link al video -->)
-- [Tablero JIRA](<!-- link JIRA -->)
+- [Release v1.0-entrega1](https://github.com/CampusLink-INF301/CampusLink/releases/tag/v1.0-entrega1) — tag en GitHub
+- [Video Entrega 1](<!-- link al video -->) — _pendiente_
+- [Tablero JIRA](https://campuslink-inf301.atlassian.net/jira/software/projects/KAN/boards/1) — gestión de proyecto
+- [Discord](https://discord.gg/nQ8swvX8yW) — comunicación del equipo
