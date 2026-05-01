@@ -21,8 +21,8 @@ CampusLink es una plataforma web para la comunidad universitaria donde estudiant
 |---|---|
 | 🎥 Video Entrega 1 | _[pendiente — agregar link YouTube]_ |
 | 📚 Wiki del proyecto | [GitHub Wiki](https://github.com/CampusLink-INF301/CampusLink/wiki) |
-| 📊 Tablero JIRA | _[pendiente — agregar link JIRA]_ |
-| 💬 Servidor Discord | _[pendiente — agregar link Discord]_ |
+| 📊 Tablero JIRA | [JIRA Kanban](https://campuslink-inf301.atlassian.net/jira/software/projects/KAN/boards/1) |
+| 💬 Servidor Discord | [Discord Community](https://discord.gg/nQ8swvX8yW) |
 | 🏷️ Release v1.0-entrega1 | [GitHub Release](https://github.com/CampusLink-INF301/CampusLink/releases/tag/v1.0-entrega1) |
 | 🌐 Frontend (Vercel) | _[pendiente — agregar URL Vercel]_ |
 | ⚙️ Backend (Railway) | _[pendiente — agregar URL Railway]_ |
