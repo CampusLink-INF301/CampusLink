@@ -6,9 +6,9 @@
 
 2. **Base de datos PostgreSQL disponible**: Se asume acceso a una instancia PostgreSQL (local o Railway). El esquema se crea automáticamente con `synchronize: true` en entorno de desarrollo.
 
-3. **Un equipo de 4 personas**: El documento de entrega indica equipos de 3, pero el equipo tiene 4 integrantes. Se asume que esto es aceptado por el docente (verificar).
+3. **Un equipo de 4 personas**: El documento de entrega indica equipos de 3, pero el equipo tiene 4 integrantes. Se asume que esto es aceptado por el docente (verificado).
 
-4. **Playwright para Entrega 1**: Playwright aparece en el documento como "herramienta E2E similar a Selenium para Entrega 3", pero el equipo lo eligió para todas las entregas. Se registró en el foro de Aula como herramienta alternativa.
+4. **Jest para Entrega 1**: Se eligió Jest como herramienta de testing para Entrega 1, cubriendo tests unitarios de servicios backend y componentes frontend. Los tests E2E con Playwright están planificados para Entrega 3.
 
 5. **Monorepo**: El proyecto usa un repositorio único con `npm workspaces`. Los CIs y despliegues apuntan a subcarpetas `apps/frontend` y `apps/backend`.
 
@@ -32,5 +32,5 @@
 
 - **`synchronize: true`** en TypeORM solo se usa en desarrollo. En producción se deben usar migrations.
 - El **CORS** del backend permite solo `localhost:5173` y `FRONTEND_URL`. Agregar la URL de Vercel en la variable de entorno al desplegar.
-- El **JWT** no tiene refresh token. Expira en 7 días.
-- Los tests de Playwright requieren la **base de datos limpia o con datos predecibles**. En Railway de producción no se deben ejecutar los tests destructivos.
+- El **JWT** no tiene refresh token. Expira en 7 días (configurable con `JWT_EXPIRATION`).
+- Los **tests Jest** del backend usan mocks del repositorio TypeORM — no requieren base de datos para ejecutar.

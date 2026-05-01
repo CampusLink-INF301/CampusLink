@@ -6,27 +6,27 @@ Bienvenido a la documentación del proyecto **CampusLink — Red de Oportunidade
 
 ## Cómo partir
 
-- [Instalación y ejecución local](../README.md#instalación-y-ejecución-local)
-- [Cómo ejecutar los tests Playwright](../README.md#cómo-ejecutar-los-tests-playwright-e2e)
+- Instalación y ejecución local → ver [README](https://github.com/CampusLink-INF301/CampusLink#instalación-y-ejecución-local)
+- Cómo ejecutar los tests → ver [Estrategia de Pruebas](Proyecto---Estrategia-de-Pruebas)
 
 ---
 
 ## Documentación del proyecto
 
-- [Proyecto - Resumen](Proyecto---Resumen.md)
-- [Proyecto - Tecnologías y Stack](Proyecto---Tecnologías-y-Stack.md)
-- [Proyecto - Arquitectura y Diseño](Proyecto---Arquitectura-y-Diseño.md)
-- [Proyecto - Estrategia de Pruebas](Proyecto---Estrategia-de-Pruebas.md)
-- [Proyecto - Supuestos y Dependencias](Proyecto---Supuestos-y-Dependencias.md)
-- [Proyecto - Evidencias](Proyecto---Evidencias.md)
+- [Proyecto - Resumen](Proyecto---Resumen)
+- [Proyecto - Tecnologías y Stack](Proyecto---Tecnologías-y-Stack)
+- [Proyecto - Arquitectura y Diseño](Proyecto---Arquitectura-y-Diseño)
+- [Proyecto - Estrategia de Pruebas](Proyecto---Estrategia-de-Pruebas)
+- [Proyecto - Supuestos y Dependencias](Proyecto---Supuestos-y-Dependencias)
+- [Proyecto - Evidencias](Proyecto---Evidencias)
 
 ---
 
 ## Entregas
 
-- [Entrega 1](Entrega-1.md) — MVP CampusLink (CRUD + Playwright)
+- [Entrega 1](Entrega-1) — MVP CampusLink (CRUD + Jest)
 - Entrega 2 — _(pendiente)_
-- Entrega 3 — _(pendiente)_
+- Entrega 3 — _(pendiente, E2E con Playwright)_
 
 ---
 

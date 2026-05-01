@@ -6,78 +6,128 @@ La estrategia de pruebas de CampusLink se construye de forma incremental a lo la
 
 | Entrega | Tipo de pruebas | Herramienta | Cobertura objetivo |
 |---|---|---|---|
-| Entrega 1 | E2E (End-to-End) | Playwright | CRUD completo de Oportunidades |
-| Entrega 2 | E2E + Unitarios | Playwright + Vitest | Postulaciones, roles, notificaciones |
-| Entrega 3 | E2E + Unitarios + Integración | Playwright + Vitest + Selenium | Flujos completos, accesibilidad |
+| Entrega 1 | Unitarios | Jest | Servicios backend + componentes frontend |
+| Entrega 2 | Unitarios + Integración | Jest + Supertest | Postulaciones, roles, notificaciones |
+| Entrega 3 | E2E (End-to-End) | Playwright | Flujos completos desde el navegador |
 
-## Entrega 1 — Pruebas E2E con Playwright
+---
+
+## Entrega 1 — Tests unitarios con Jest
 
 ### Filosofía
 
-Los tests E2E verifican que la aplicación funciona correctamente **desde la perspectiva del usuario final**, ejecutando acciones reales en el navegador. Se priorizan sobre tests unitarios en Entrega 1 porque el CRUD es la funcionalidad central y necesita validación de la integración completa (frontend → API → base de datos).
+Los tests unitarios verifican que cada pieza de lógica funciona correctamente de forma aislada. Se prioriza cubrir los servicios del backend (donde vive la lógica de negocio) y los componentes del frontend (comportamiento del usuario).
 
-### Selectores
+### Suite de tests — Backend (`apps/backend/src/`)
 
-Todos los elementos interactivos tienen atributo `data-testid` para que los selectores sean:
-- Independientes del CSS (no se rompen con rediseño visual)
-- Independientes del texto visible (no se rompen con traducciones)
-- Semánticos y mantenibles
+| Archivo | Qué prueba |
+|---|---|
+| `opportunities/opportunities.service.spec.ts` | `findAll` con filtros, `findOne`, `create`, `update`, `remove` |
+| `auth/auth.service.spec.ts` | `register` (éxito y email duplicado), `login` (éxito, usuario no existe, contraseña incorrecta) |
 
-### Suite de tests (Entrega 1)
+### Suite de tests — Frontend (`apps/frontend/src/`)
 
-| Archivo | Escenarios | Estado |
-|---|---|---|
-| `opportunities.list.spec.ts` | Carga de lista, cards visibles, botón crear | Implementado |
-| `opportunities.search.spec.ts` | Filtro por texto, por tipo, limpiar | Implementado |
-| `opportunities.detail.spec.ts` | Navegación, campos, botones edit/delete | Implementado |
-| `opportunities.create.spec.ts` | Formulario, validación, redirect | Implementado |
-| `opportunities.edit.spec.ts` | Carga datos, edición, persistencia | Implementado |
-| `opportunities.delete.spec.ts` | Desde lista, desde detalle | Implementado |
-
-### Gestión de datos de prueba
-
-Cada spec usa helpers en `tests/helpers/api.ts` para:
-- **Crear** datos de prueba via API antes de cada test (`beforeAll` / `beforeEach`)
-- **Limpiar** datos después de cada test (`afterAll` / `afterEach`)
-
-Esto garantiza que los tests sean **idempotentes** y no dejen datos basura en la BD.
+| Archivo | Qué prueba |
+|---|---|
+| `components/OpportunityCard.test.tsx` | Render, título, tipo, descripción, deadline, botón eliminar, callback |
+| `components/SearchBar.test.tsx` | Submit con texto, filtro por tipo, botón limpiar |
+| `api/opportunities.test.ts` | `getAll`, `getById`, `create`, `update`, `remove` (mock axios) |
 
 ### Cómo ejecutar
 
 ```bash
+# Backend
+cd apps/backend
+npm test
+
+# Frontend
 cd apps/frontend
+npm test
 
-# Requiere backend y frontend corriendo
-npm run test:e2e
-
-# Ver reporte HTML
-npm run test:e2e:report
-
-# Modo UI interactivo
-npm run test:e2e:ui
+# Con cobertura
+npm run test:coverage
 ```
 
-### Configuración de Playwright
+### Resultado esperado
 
-- **Browser:** Chromium (principal). Se puede agregar Firefox y WebKit.
-- **Timeout:** 30 segundos por test.
-- **Retries:** 1 reintento en caso de fallo.
-- **WebServer:** Playwright inicia el servidor Vite automáticamente si no está corriendo.
-- **Screenshots:** Solo en fallos.
-- **Traces:** En primer reintento.
-- **Reporte:** HTML en `playwright-report/`.
+```
+Backend:
+  OpportunitiesService
+    ✓ findAll sin filtros
+    ✓ findAll con tipo
+    ✓ findAll con search
+    ✓ findOne encontrado
+    ✓ findOne lanza NotFoundException
+    ✓ create
+    ✓ update
+    ✓ update lanza NotFoundException
+    ✓ remove
+    ✓ remove lanza NotFoundException
 
-## Criterios de calidad
+  AuthService
+    ✓ register éxito
+    ✓ register lanza ConflictException
+    ✓ login éxito
+    ✓ login usuario no encontrado
+    ✓ login contraseña incorrecta
 
-- Los tests no deben depender del orden de ejecución.
-- Cada test debe ser autónomo (crea y limpia sus propios datos).
-- Los tests no deben usar `page.waitForTimeout()` — usar auto-wait de Playwright.
-- Los `data-testid` son contratos: no se renombran sin actualizar los tests.
+Frontend:
+  OpportunityCard
+    ✓ renderiza título
+    ✓ renderiza tipo
+    ✓ renderiza descripción
+    ✓ trunca descripción larga
+    ✓ no muestra botón eliminar sin onDelete
+    ✓ muestra botón eliminar con onDelete
+    ✓ llama onDelete con id correcto
+    ✓ renderiza deadline
+    ✓ no renderiza deadline si no hay
 
-## Plan para Entrega 2
+  SearchBar
+    ✓ renderiza inputs
+    ✓ llama onSearch al enviar
+    ✓ llama onSearch con tipo seleccionado
+    ✓ limpiar resetea y llama onSearch
+
+  opportunitiesApi
+    ✓ getAll sin params
+    ✓ getAll con params
+    ✓ getById
+    ✓ create
+    ✓ update
+    ✓ remove
+```
+
+### Selectores `data-testid`
+
+Todos los elementos interactivos tienen `data-testid` para que los selectores sean:
+- Independientes del CSS
+- Independientes del texto visible
+- Semánticos y mantenibles
+
+---
+
+## Entrega 2 — Tests de integración
 
 Se agregarán:
-- Tests unitarios de servicios NestJS con Jest
-- Tests de integración de endpoints con supertest
-- Tests de componentes React con Vitest + Testing Library
-- Cobertura para módulo de postulaciones y roles
+- Tests de integración de endpoints con **Supertest** (backend real con base de datos de test)
+- Ampliación de tests unitarios para módulo de postulaciones y roles
+- Cobertura mínima del 70% en servicios
+
+---
+
+## Entrega 3 — E2E con Playwright
+
+Se agregarán:
+- Tests end-to-end que ejecutan acciones reales en el navegador
+- Flujos completos: registro → login → crear oportunidad → postular → gestionar estado
+- Tests de accesibilidad
+- Cobertura multi-browser: Chromium, Firefox, WebKit
+
+### Configuración futura de Playwright
+
+- **Browsers:** Chromium, Firefox, WebKit
+- **Timeout:** 30 segundos por test
+- **Retries:** 1 reintento en fallos
+- **Screenshots:** Solo en fallos
+- **Reporte:** HTML en `playwright-report/`

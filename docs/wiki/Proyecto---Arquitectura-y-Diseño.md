@@ -42,15 +42,15 @@ campuslink/
 │   │   │   │       └── RegisterPage.tsx
 │   │   │   ├── types/          # Tipos TypeScript compartidos
 │   │   │   └── App.tsx         # Router principal
-│   │   ├── tests/              # Tests Playwright E2E
-│   │   │   ├── helpers/api.ts  # Helpers para seed/reset de datos
-│   │   │   ├── opportunities.list.spec.ts
-│   │   │   ├── opportunities.search.spec.ts
-│   │   │   ├── opportunities.detail.spec.ts
-│   │   │   ├── opportunities.create.spec.ts
-│   │   │   ├── opportunities.edit.spec.ts
-│   │   │   └── opportunities.delete.spec.ts
-│   │   └── playwright.config.ts
+│   │   ├── src/
+│   │   │   ├── __mocks__/      # Mocks para Jest (api-client)
+│   │   │   ├── components/
+│   │   │   │   ├── OpportunityCard.test.tsx
+│   │   │   │   └── SearchBar.test.tsx
+│   │   │   └── api/
+│   │   │       └── opportunities.test.ts
+│   │   ├── babel.config.cjs    # Transform para Jest (babel-jest)
+│   │   └── playwright.config.ts  # E2E — reservado para Entrega 3
 │   └── backend/                # NestJS
 │       └── src/
 │           ├── opportunities/  # Módulo CRUD principal

@@ -38,7 +38,7 @@ CampusLink es una plataforma web para la comunidad universitaria donde estudiant
 | Base de datos | PostgreSQL |
 | Hosting frontend | Vercel |
 | Hosting backend/DB | Railway |
-| Testing | Playwright (E2E) |
+| Testing E1 | Jest (unitarios) |
 | Control de versiones | Git + GitFlow |
 | Gestión del proyecto | JIRA (Kanban) |
 | Comunicación | Discord |
@@ -56,8 +56,8 @@ CampusLink es una plataforma web para la comunidad universitaria donde estudiant
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/<org>/campuslink.git
-cd campuslink
+git clone https://github.com/CampusLink-INF301/CampusLink.git
+cd CampusLink
 ```
 
 ### 2. Configurar el backend
@@ -95,32 +95,20 @@ npm run dev
 
 ---
 
-## Cómo ejecutar los tests (Playwright E2E)
-
-> Requiere que tanto el backend como el frontend estén corriendo antes de ejecutar.
+## Cómo ejecutar los tests (Jest)
 
 ```bash
-# Terminal 1 — backend
-cd apps/backend && npm run start:dev
+# Tests unitarios del backend (servicios NestJS)
+cd apps/backend
+npm test
 
-# Terminal 2 — frontend (Playwright lo inicia automáticamente, pero puedes dejarlo corriendo)
+# Tests de componentes del frontend
 cd apps/frontend
+npm test
 
-# Terminal 3 — tests
-cd apps/frontend
-npm run test:e2e
-
-# Ver reporte HTML
-npm run test:e2e:report
+# Con reporte de cobertura
+npm run test:coverage
 ```
-
-Los tests cubren:
-- Listar oportunidades
-- Buscar y filtrar por tipo/texto
-- Ver detalle de oportunidad
-- Crear nueva oportunidad
-- Editar oportunidad existente
-- Eliminar oportunidad
 
 ---
 

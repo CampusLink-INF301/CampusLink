@@ -9,7 +9,7 @@
 
 ## Objetivo de la entrega
 
-Construir el MVP de CampusLink con las funcionalidades prioritarias de la plataforma, implementando un CRUD completo para la entidad principal (Oportunidades) y pruebas automatizadas E2E con Playwright que validen el comportamiento de la aplicación.
+Construir el MVP de CampusLink con las funcionalidades prioritarias de la plataforma, implementando un CRUD completo para la entidad principal (Oportunidades) con autenticación JWT y pruebas unitarias con Jest que validen la lógica de negocio del sistema.
 
 ---
 
@@ -19,18 +19,26 @@ Construir el MVP de CampusLink con las funcionalidades prioritarias de la plataf
 
 | Funcionalidad | Frontend | Backend | Tests |
 |---|---|---|---|
-| Listar oportunidades | `/opportunities` | `GET /api/opportunities` | `opportunities.list.spec.ts` |
-| Buscar y filtrar | SearchBar con texto y tipo | `?search=X&type=Y` | `opportunities.search.spec.ts` |
-| Ver detalle | `/opportunities/:id` | `GET /api/opportunities/:id` | `opportunities.detail.spec.ts` |
-| Crear oportunidad | `/opportunities/new` | `POST /api/opportunities` | `opportunities.create.spec.ts` |
-| Editar oportunidad | `/opportunities/:id/edit` | `PUT /api/opportunities/:id` | `opportunities.edit.spec.ts` |
-| Eliminar oportunidad | Botón en lista y detalle | `DELETE /api/opportunities/:id` | `opportunities.delete.spec.ts` |
+| Listar oportunidades | `/opportunities` | `GET /api/opportunities` | `opportunities.service.spec.ts` |
+| Buscar y filtrar | SearchBar con texto y tipo | `?search=X&type=Y` | `opportunities.service.spec.ts` |
+| Ver detalle | `/opportunities/:id` | `GET /api/opportunities/:id` | `opportunities.service.spec.ts` |
+| Crear oportunidad | `/opportunities/new` | `POST /api/opportunities` | `opportunities.service.spec.ts` |
+| Editar oportunidad | `/opportunities/:id/edit` | `PUT /api/opportunities/:id` | `opportunities.service.spec.ts` |
+| Eliminar oportunidad | Botón en lista y detalle | `DELETE /api/opportunities/:id` | `opportunities.service.spec.ts` |
 
 ### Autenticación básica
 
-- Registro de usuarios (`POST /api/auth/register`)
-- Login con JWT (`POST /api/auth/login`)
+- Registro de usuarios (`POST /api/auth/register`) — cubierto por `auth.service.spec.ts`
+- Login con JWT (`POST /api/auth/login`) — cubierto por `auth.service.spec.ts`
 - Roles definidos: estudiante, docente, institución, administrador
+
+### Componentes frontend testeados
+
+| Componente | Archivo de test |
+|---|---|
+| `OpportunityCard` | `components/OpportunityCard.test.tsx` |
+| `SearchBar` | `components/SearchBar.test.tsx` |
+| `opportunitiesApi` | `api/opportunities.test.ts` |
 
 ---
 
@@ -38,12 +46,12 @@ Construir el MVP de CampusLink con las funcionalidades prioritarias de la plataf
 
 ### Prerequisitos
 - Node.js >= 18
-- PostgreSQL local (o URL de Railway)
+- PostgreSQL local o URL de Railway
 
 ### Backend
 ```bash
 cd apps/backend
-cp .env.example .env   # Editar DATABASE_URL
+cp .env.example .env   # Editar DATABASE_URL y JWT_SECRET
 npm install
 npm run start:dev      # http://localhost:3000
 ```
@@ -59,23 +67,27 @@ npm run dev            # http://localhost:5173
 
 ## Pruebas — Cómo ejecutar
 
-### Prerequisito
-Backend y frontend deben estar corriendo.
-
-### Ejecutar todos los tests
+### Backend (tests unitarios de servicios)
 ```bash
-cd apps/frontend
-npm run test:e2e
+cd apps/backend
+npm test
 ```
 
-### Ver reporte HTML
+### Frontend (tests de componentes)
 ```bash
-npm run test:e2e:report
+cd apps/frontend
+npm test
+```
+
+### Con cobertura
+```bash
+npm run test:coverage
 ```
 
 ### Resultado esperado
 ```
-19 tests passed (6 specs)
+Backend:  15 tests passed
+Frontend: 18 tests passed
 ```
 
 ---
@@ -104,8 +116,8 @@ npm run test:e2e:report
 ## Supuestos y dependencias específicas de E1
 
 - El equipo tiene 4 integrantes (el curso indica 3) — verificado con docente.
-- Playwright fue registrado como herramienta alternativa en el foro de Aula.
 - En Entrega 1, cualquier usuario puede crear/editar/eliminar oportunidades (sin control por roles).
 - Se usa `synchronize: true` en TypeORM en desarrollo — en producción se migra a migrations.
-- La URL del backend en Vercel debe ser configurada como variable de entorno `VITE_API_URL`.
+- La URL del backend en Railway debe ser configurada como variable de entorno `VITE_API_URL` en Vercel.
 - La URL del frontend de Vercel debe ser agregada al CORS del backend como `FRONTEND_URL`.
+- Los tests E2E con Playwright están planificados para Entrega 3.

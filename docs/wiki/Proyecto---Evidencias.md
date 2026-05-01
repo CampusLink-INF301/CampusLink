@@ -8,32 +8,29 @@
 
 ### Capturas de pantalla
 
-> _Agregar capturas de la aplicación corriendo: lista de oportunidades, formulario crear, detalle, etc._
+> _Agregar capturas de la aplicación corriendo._
 
 | Pantalla | Captura |
 |---|---|
 | Lista de oportunidades | _[pendiente]_ |
-| Formulario crear | _[pendiente]_ |
+| Formulario crear oportunidad | _[pendiente]_ |
 | Detalle de oportunidad | _[pendiente]_ |
 | Formulario editar | _[pendiente]_ |
-| Reporte Playwright | _[pendiente]_ |
+| Resultado de tests Jest | _[pendiente]_ |
 
-### Resultados de tests Playwright
+### Resultados de tests Jest
 
-> _Copiar aquí el output de `npm run test:e2e` o screenshot del reporte HTML._
+> _Copiar aquí el output de `npm test` en backend y frontend._
 
+**Backend (`apps/backend`):**
 ```
-✓  opportunities.list.spec.ts (4 tests)
-✓  opportunities.search.spec.ts (3 tests)
-✓  opportunities.detail.spec.ts (4 tests)
-✓  opportunities.create.spec.ts (3 tests)
-✓  opportunities.edit.spec.ts (3 tests)
-✓  opportunities.delete.spec.ts (2 tests)
-
-19 tests passed
+_(actualizar con resultado real de npm test)_
 ```
 
-_(Estado esperado — actualizar con resultado real)_
+**Frontend (`apps/frontend`):**
+```
+_(actualizar con resultado real de npm test)_
+```
 
 ### Tablero JIRA
 
@@ -43,9 +40,9 @@ _(Estado esperado — actualizar con resultado real)_
 
 | PR | Historia | Estado |
 |---|---|---|
-| _[pendiente]_ | KAN-1 Listar oportunidades | — |
-| _[pendiente]_ | KAN-4 Publicar oportunidad | — |
-| _[pendiente]_ | KAN-9 Tests Playwright | — |
+| _[pendiente]_ | KAN-1 Scaffolding inicial | — |
+| _[pendiente]_ | KAN-4 CRUD Oportunidades | — |
+| _[pendiente]_ | KAN-9 Tests Jest | — |
 
 ### Release
 
