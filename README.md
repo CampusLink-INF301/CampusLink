@@ -45,13 +45,26 @@ CampusLink es una plataforma web para la comunidad universitaria donde estudiant
 
 ---
 
+## Prerequisitos
+
+Antes de comenzar, asegúrate de tener instalado:
+
+- **Node.js** >= 18 — [descargar](https://nodejs.org/)
+- **Git** — [descargar](https://git-scm.com/)
+- **PostgreSQL** >= 15 — solo si vas a usar base de datos local ([descargar](https://www.postgresql.org/download/))
+  - Si usas la base de datos de Railway (nube), no necesitas instalar PostgreSQL localmente.
+
+Verifica tus versiones:
+
+```bash
+node --version   # debe mostrar v18.x o superior
+npm --version    # debe mostrar 9.x o superior
+git --version
+```
+
+---
+
 ## Instalación y ejecución local
-
-### Prerequisitos
-
-- Node.js >= 18
-- PostgreSQL corriendo localmente (o usar la URL de Railway)
-- Git
 
 ### 1. Clonar el repositorio
 
@@ -60,49 +73,100 @@ git clone https://github.com/CampusLink-INF301/CampusLink.git
 cd CampusLink
 ```
 
-### 2. Configurar el backend
+### 2. Instalar dependencias
+
+Desde la raíz del proyecto instala las dependencias de ambas aplicaciones a la vez:
+
+```bash
+npm install
+```
+
+### 3. Configurar el backend
+
+Copia el archivo de ejemplo de variables de entorno:
 
 ```bash
 cd apps/backend
 cp .env.example .env
-# Editar .env con tus credenciales de base de datos
-npm install
 ```
 
-Crear la base de datos en PostgreSQL:
+Edita el archivo `.env` con tus datos. Tienes dos opciones:
 
-```sql
+**Opción A — Base de datos local (PostgreSQL instalado en tu máquina):**
+
+```env
+DATABASE_URL=postgresql://postgres:tu_password@localhost:5432/campuslink
+JWT_SECRET=cualquier_clave_secreta_larga
+PORT=3000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+```
+
+Luego crea la base de datos en PostgreSQL:
+
+```bash
+# En la terminal de psql o en pgAdmin:
 CREATE DATABASE campuslink;
 ```
 
-Iniciar el backend (el esquema se crea automáticamente con `synchronize: true` en desarrollo):
+**Opción B — Base de datos en Railway (recomendado, no requiere PostgreSQL local):**
 
-```bash
-npm run start:dev
-# El backend queda en http://localhost:3000
+Solicita al líder del equipo las credenciales de Railway y pega la URL completa:
+
+```env
+DATABASE_URL=postgresql://usuario:password@host.railway.app:puerto/railway
+JWT_SECRET=cualquier_clave_secreta_larga
+PORT=3000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 ```
 
-### 3. Configurar el frontend
+> El esquema de la base de datos se crea automáticamente al iniciar el backend (`synchronize: true` en desarrollo). No es necesario correr migraciones manualmente.
+
+### 4. Iniciar el backend
+
+```bash
+# Desde apps/backend
+npm run start:dev
+```
+
+El backend queda disponible en `http://localhost:3000`. Puedes verificar que funciona accediendo a `http://localhost:3000/api/opportunities` en el navegador.
+
+### 5. Configurar el frontend
 
 ```bash
 cd apps/frontend
-# Opcional: crear .env.local si el backend no corre en localhost:3000
-# echo "VITE_API_URL=http://localhost:3000/api" > .env.local
-npm install
-npm run dev
-# El frontend queda en http://localhost:5173
 ```
+
+Por defecto el frontend asume que el backend corre en `http://localhost:3000`. Si ese es tu caso, no necesitas crear ningún archivo adicional.
+
+Si el backend corre en otra URL (por ejemplo, en Railway directamente), crea el archivo `.env.local`:
+
+```bash
+echo "VITE_API_URL=http://localhost:3000/api" > .env.local
+```
+
+### 6. Iniciar el frontend
+
+```bash
+# Desde apps/frontend
+npm run dev
+```
+
+El frontend queda disponible en `http://localhost:5173`.
 
 ---
 
 ## Cómo ejecutar los tests (Jest)
 
+Los tests unitarios no requieren que el backend o la base de datos estén corriendo.
+
 ```bash
-# Tests unitarios del backend (servicios NestJS)
+# Tests del backend (servicios NestJS — 16 tests)
 cd apps/backend
 npm test
 
-# Tests de componentes del frontend
+# Tests del frontend (componentes React y API client — 21 tests)
 cd apps/frontend
 npm test
 
@@ -110,30 +174,94 @@ npm test
 npm run test:coverage
 ```
 
+**Resultado esperado:**
+
+```
+Backend:  16/16 tests pasando
+Frontend: 21/21 tests pasando
+```
+
+Los tests cubren:
+- `AuthService`: registro, login, manejo de errores
+- `OpportunitiesService`: CRUD completo con filtros y búsqueda
+- `OpportunityCard`: render, props, truncado, botón eliminar
+- `SearchBar`: búsqueda por texto, filtro por tipo, limpiar
+- `opportunitiesApi`: todas las llamadas HTTP (axios mockeado)
+
+---
+
+## Scripts disponibles
+
+Desde la raíz del proyecto:
+
+```bash
+npm run dev:frontend      # Inicia el frontend en localhost:5173
+npm run dev:backend       # Inicia el backend en localhost:3000
+npm run build:frontend    # Build de producción del frontend
+npm run build:backend     # Build de producción del backend
+```
+
+Desde `apps/backend`:
+
+```bash
+npm run start:dev         # Backend en modo watch (recarga automática)
+npm run start:prod        # Backend en modo producción
+npm test                  # Jest — tests unitarios
+npm run test:cov          # Jest — tests con cobertura
+```
+
+Desde `apps/frontend`:
+
+```bash
+npm run dev               # Frontend en modo desarrollo
+npm run build             # Build de producción
+npm test                  # Jest — tests unitarios
+npm run test:coverage     # Jest — tests con cobertura
+```
+
 ---
 
 ## Estructura del proyecto
 
 ```
-campuslink/
+CampusLink/
 ├── apps/
-│   ├── frontend/               # React + Vite + TypeScript
+│   ├── frontend/                    # React 19 + Vite + TypeScript
 │   │   ├── src/
-│   │   │   ├── api/            # Clientes HTTP (axios)
-│   │   │   ├── components/     # Componentes reutilizables
-│   │   │   ├── pages/          # Páginas por ruta
-│   │   │   └── types/          # Tipos TypeScript
-│   │   ├── tests/              # Tests Playwright E2E
-│   │   └── playwright.config.ts
-│   └── backend/                # NestJS + TypeORM
+│   │   │   ├── api/                 # Clientes HTTP (axios)
+│   │   │   │   ├── client.ts        # Instancia axios base
+│   │   │   │   ├── opportunities.ts # Llamadas CRUD oportunidades
+│   │   │   │   └── auth.ts          # Llamadas de autenticación
+│   │   │   ├── components/          # Componentes reutilizables
+│   │   │   │   ├── Navbar.tsx
+│   │   │   │   ├── OpportunityCard.tsx
+│   │   │   │   ├── OpportunityForm.tsx
+│   │   │   │   └── SearchBar.tsx
+│   │   │   ├── pages/               # Páginas por dominio
+│   │   │   │   ├── auth/            # Login, Register
+│   │   │   │   └── opportunities/   # List, Detail, Create, Edit
+│   │   │   └── types/               # Interfaces TypeScript compartidas
+│   │   ├── tests/                   # Tests Playwright E2E (Entrega 3)
+│   │   └── babel.config.cjs         # Configuración Babel para Jest
+│   │
+│   └── backend/                     # NestJS + TypeORM
 │       └── src/
-│           ├── opportunities/  # Módulo CRUD principal
-│           └── auth/           # Módulo de autenticación JWT
-├── docs/                       # Documentación adicional
-│   └── jira-stories.md         # Historias de usuario listas para JIRA
-├── .github/workflows/          # GitHub Actions CI
+│           ├── auth/                # Módulo JWT (register, login)
+│           │   ├── auth.service.ts
+│           │   ├── auth.service.spec.ts
+│           │   └── ...
+│           ├── opportunities/       # Módulo CRUD principal
+│           │   ├── opportunities.service.ts
+│           │   ├── opportunities.service.spec.ts
+│           │   └── ...
+│           └── app.module.ts        # Módulo raíz + configuración TypeORM
+│
+├── docs/
+│   └── wiki/                        # Fuente de la GitHub Wiki
+├── .github/workflows/               # GitHub Actions CI (Jest)
+├── RULES.md                         # Guía para asistentes IA
 ├── .gitignore
-├── LICENSE                     # MIT
+├── LICENSE
 └── README.md
 ```
 
@@ -142,10 +270,10 @@ campuslink/
 ## Flujo GitFlow
 
 ```
-main          ← código estable (releases)
-develop       ← integración continua
-feature/KAN-XX-nombre  ← por historia de usuario
-release/v1.0  ← preparación de entrega
+main              ← código estable (releases)
+develop           ← integración continua
+feature/KAN-XX    ← por historia de usuario
+release/v1.0      ← preparación de entrega
 ```
 
 **Convención de commits:** `KAN-XX: descripción breve` (vincula con JIRA)
@@ -162,5 +290,4 @@ MIT License — ver [LICENSE](LICENSE)
 
 Este proyecto fue desarrollado en el contexto del curso **INF-301** (Pruebas de Software), 2026.
 
-Para reportar problemas o contribuir, abrir un Issue o Pull Request en este repositorio.  
-Para comunicación del equipo: [Servidor Discord](<!-- link Discord -->) 
+Para reportar problemas o contribuir, abrir un Issue o Pull Request en este repositorio.
