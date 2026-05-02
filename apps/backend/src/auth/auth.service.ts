@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -24,6 +24,12 @@ export class AuthService {
     const saved = await this.userRepo.save(user);
     const { password: _, ...result } = saved as User & { password: string };
     return { user: result, token: this.jwtService.sign({ sub: saved.id, role: saved.role }) };
+  }
+
+  async getMe(userId: string) {
+    const user = await this.userRepo.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 
   async login(dto: LoginDto) {
