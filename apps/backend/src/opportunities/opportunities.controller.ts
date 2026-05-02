@@ -9,11 +9,14 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { OpportunitiesService } from './opportunities.service';
 import { CreateOpportunityDto } from './dto/create-opportunity.dto';
 import { UpdateOpportunityDto } from './dto/update-opportunity.dto';
 import { QueryOpportunityDto } from './dto/query-opportunity.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('opportunities')
 export class OpportunitiesController {
@@ -30,18 +33,25 @@ export class OpportunitiesController {
   }
 
   @Post()
-  create(@Body() dto: CreateOpportunityDto) {
-    return this.service.create(dto);
+  @UseGuards(JwtAuthGuard)
+  create(@Body() dto: CreateOpportunityDto, @Request() req: { user: { id: string } }) {
+    return this.service.create(dto, req.user.id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateOpportunityDto) {
-    return this.service.update(id, dto);
+  @UseGuards(JwtAuthGuard)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateOpportunityDto,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.service.update(id, dto, req.user.id);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @Request() req: { user: { id: string } }) {
+    return this.service.remove(id, req.user.id);
   }
 }
