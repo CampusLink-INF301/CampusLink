@@ -6,6 +6,9 @@ import { SearchBar } from '../../components/SearchBar';
 import type { Opportunity, OpportunityType } from '../../types/opportunity';
 
 export function OpportunitiesListPage() {
+  const storedUser = localStorage.getItem('user');
+  const currentUserId: string | undefined =
+    storedUser ? (JSON.parse(storedUser) as { id: string }).id : undefined;
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,7 +60,7 @@ export function OpportunitiesListPage() {
       )}
 
       {!loading && opportunities.map((o) => (
-        <OpportunityCard key={o.id} opportunity={o} onDelete={handleDelete} />
+        <OpportunityCard key={o.id} opportunity={o} onDelete={handleDelete} currentUserId={currentUserId} />
       ))}
     </main>
   );

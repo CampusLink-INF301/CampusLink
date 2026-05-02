@@ -5,12 +5,15 @@ import { OPPORTUNITY_TYPE_LABELS } from '../types/opportunity';
 interface Props {
   opportunity: Opportunity;
   onDelete?: (id: string) => void;
+  currentUserId?: string;
 }
 
-export function OpportunityCard({ opportunity, onDelete }: Props) {
+export function OpportunityCard({ opportunity, onDelete, currentUserId }: Props) {
   const deadline = opportunity.deadline
     ? new Date(opportunity.deadline).toLocaleDateString('es-CL')
     : null;
+
+  const isOwner = !!(currentUserId && opportunity.publisher?.id === currentUserId);
 
   return (
     <article className="card" data-testid="opportunity-card">
@@ -31,22 +34,24 @@ export function OpportunityCard({ opportunity, onDelete }: Props) {
             <p className="card-meta">Fecha límite: {deadline}</p>
           )}
         </div>
-        <div className="card-actions">
-          <Link to={`/opportunities/${opportunity.id}/edit`}>
-            <button className="btn btn-secondary btn-sm" aria-label="Editar oportunidad">
-              Editar
-            </button>
-          </Link>
-          {onDelete && (
-            <button
-              className="btn btn-danger btn-sm"
-              aria-label="Eliminar oportunidad"
-              onClick={() => onDelete(opportunity.id)}
-            >
-              Eliminar
-            </button>
-          )}
-        </div>
+        {isOwner && (
+          <div className="card-actions">
+            <Link to={`/opportunities/${opportunity.id}/edit`}>
+              <button className="btn btn-secondary btn-sm" aria-label="Editar oportunidad">
+                Editar
+              </button>
+            </Link>
+            {onDelete && (
+              <button
+                className="btn btn-danger btn-sm"
+                aria-label="Eliminar oportunidad"
+                onClick={() => onDelete(opportunity.id)}
+              >
+                Eliminar
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
