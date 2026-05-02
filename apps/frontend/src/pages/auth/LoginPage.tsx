@@ -12,8 +12,9 @@ export function LoginPage() {
     e.preventDefault();
     setError('');
     try {
-      const { token } = await authApi.login({ email, password });
+      const { token, user } = await authApi.login({ email, password });
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       navigate('/opportunities');
     } catch {
       setError('Credenciales inválidas.');

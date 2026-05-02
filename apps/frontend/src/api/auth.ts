@@ -9,4 +9,6 @@ export const authApi = {
     client.post<AuthResponse>('/auth/login', payload).then((r) => r.data),
   register: (payload: RegisterPayload) =>
     client.post<AuthResponse>('/auth/register', payload).then((r) => r.data),
+  getMe: () =>
+    client.get<AuthResponse['user']>('/auth/me').then((r) => r.data),
 };

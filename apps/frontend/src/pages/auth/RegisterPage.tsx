@@ -13,8 +13,9 @@ export function RegisterPage() {
     e.preventDefault();
     setError('');
     try {
-      const { token } = await authApi.register({ name, email, password });
+      const { token, user } = await authApi.register({ name, email, password });
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       navigate('/opportunities');
     } catch {
       setError('Error al registrarse. El email puede estar en uso.');

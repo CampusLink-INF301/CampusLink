@@ -28,6 +28,7 @@ export interface Opportunity {
   requirements?: string;
   deadline?: string;
   isActive: boolean;
+  publisher?: { id: string; name: string };
   createdAt: string;
   updatedAt: string;
 }
