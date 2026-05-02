@@ -1,17 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ILike } from 'typeorm';
 import { OpportunitiesService } from './opportunities.service';
 import { Opportunity, OpportunityType } from './entities/opportunity.entity';
+import { UserRole } from '../auth/entities/user.entity';
 
 const mockRepo = {
   find: jest.fn(),
-  findOneBy: jest.fn(),
+  findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
   remove: jest.fn(),
 };
+
+const publisher = { id: 'user-1', name: 'Test User', email: 'test@test.com', role: UserRole.ESTUDIANTE, password: 'hashed', createdAt: new Date() };
 
 const baseOpportunity: Opportunity = {
   id: 'uuid-1',
@@ -21,7 +24,7 @@ const baseOpportunity: Opportunity = {
   requirements: null as unknown as string,
   deadline: null as unknown as Date,
   isActive: true,
-  publisher: null as unknown as import('../auth/entities/user.entity').User,
+  publisher,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
@@ -51,6 +54,7 @@ describe('OpportunitiesService', () => {
       expect(mockRepo.find).toHaveBeenCalledWith({
         where: { isActive: true },
         order: { createdAt: 'DESC' },
+        relations: ['publisher'],
       });
       expect(result).toEqual([baseOpportunity]);
     });
@@ -63,6 +67,7 @@ describe('OpportunitiesService', () => {
       expect(mockRepo.find).toHaveBeenCalledWith({
         where: { isActive: true, type: OpportunityType.TUTORIA },
         order: { createdAt: 'DESC' },
+        relations: ['publisher'],
       });
     });
 
@@ -74,28 +79,33 @@ describe('OpportunitiesService', () => {
       expect(mockRepo.find).toHaveBeenCalledWith({
         where: { isActive: true, title: ILike('%cálculo%') },
         order: { createdAt: 'DESC' },
+        relations: ['publisher'],
       });
     });
   });
 
   describe('findOne', () => {
     it('returns the opportunity when found', async () => {
-      mockRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockRepo.findOne.mockResolvedValue(baseOpportunity);
 
       const result = await service.findOne('uuid-1');
 
+      expect(mockRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'uuid-1' },
+        relations: ['publisher'],
+      });
       expect(result).toEqual(baseOpportunity);
     });
 
     it('throws NotFoundException when not found', async () => {
-      mockRepo.findOneBy.mockResolvedValue(null);
+      mockRepo.findOne.mockResolvedValue(null);
 
       await expect(service.findOne('no-existe')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('create', () => {
-    it('creates and saves a new opportunity', async () => {
+    it('creates and saves a new opportunity with publisher', async () => {
       const dto = {
         title: 'Nueva tutoría',
         description: 'Descripción',
@@ -105,46 +115,58 @@ describe('OpportunitiesService', () => {
       mockRepo.create.mockReturnValue(created);
       mockRepo.save.mockResolvedValue(created);
 
-      const result = await service.create(dto);
+      const result = await service.create(dto, 'user-1');
 
-      expect(mockRepo.create).toHaveBeenCalledWith(dto);
+      expect(mockRepo.create).toHaveBeenCalledWith({ ...dto, publisher: { id: 'user-1' } });
       expect(mockRepo.save).toHaveBeenCalledWith(created);
       expect(result).toEqual(created);
     });
   });
 
   describe('update', () => {
-    it('updates and saves an existing opportunity', async () => {
-      mockRepo.findOneBy.mockResolvedValue({ ...baseOpportunity });
+    it('updates an opportunity when the user is the publisher', async () => {
+      mockRepo.findOne.mockResolvedValue({ ...baseOpportunity });
       const updated = { ...baseOpportunity, title: 'Título actualizado' };
       mockRepo.save.mockResolvedValue(updated);
 
-      const result = await service.update('uuid-1', { title: 'Título actualizado' });
+      const result = await service.update('uuid-1', { title: 'Título actualizado' }, 'user-1');
 
       expect(result.title).toBe('Título actualizado');
     });
 
-    it('throws NotFoundException when updating non-existent opportunity', async () => {
-      mockRepo.findOneBy.mockResolvedValue(null);
+    it('throws ForbiddenException when user is not the publisher', async () => {
+      mockRepo.findOne.mockResolvedValue({ ...baseOpportunity });
 
-      await expect(service.update('no-existe', { title: 'x' })).rejects.toThrow(NotFoundException);
+      await expect(service.update('uuid-1', { title: 'x' }, 'other-user')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws NotFoundException when updating non-existent opportunity', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.update('no-existe', { title: 'x' }, 'user-1')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
-    it('removes an existing opportunity', async () => {
-      mockRepo.findOneBy.mockResolvedValue(baseOpportunity);
+    it('removes an opportunity when the user is the publisher', async () => {
+      mockRepo.findOne.mockResolvedValue(baseOpportunity);
       mockRepo.remove.mockResolvedValue(undefined);
 
-      await service.remove('uuid-1');
+      await service.remove('uuid-1', 'user-1');
 
       expect(mockRepo.remove).toHaveBeenCalledWith(baseOpportunity);
     });
 
-    it('throws NotFoundException when removing non-existent opportunity', async () => {
-      mockRepo.findOneBy.mockResolvedValue(null);
+    it('throws ForbiddenException when user is not the publisher', async () => {
+      mockRepo.findOne.mockResolvedValue({ ...baseOpportunity });
 
-      await expect(service.remove('no-existe')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('uuid-1', 'other-user')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws NotFoundException when removing non-existent opportunity', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.remove('no-existe', 'user-1')).rejects.toThrow(NotFoundException);
     });
   });
 });

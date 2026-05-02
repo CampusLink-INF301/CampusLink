@@ -4,12 +4,15 @@ import { OpportunityCard } from './OpportunityCard';
 import { OpportunityType } from '../types/opportunity';
 import type { Opportunity } from '../types/opportunity';
 
+const OWNER_ID = 'user-owner-1';
+
 const baseOpportunity: Opportunity = {
   id: 'uuid-1',
   title: 'Tutoría de Cálculo',
   description: 'Apoyo en cálculo diferencial e integral para estudiantes de primer año.',
   type: OpportunityType.TUTORIA,
   isActive: true,
+  publisher: { id: OWNER_ID, name: 'Dueño' },
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
 };
@@ -44,19 +47,25 @@ describe('OpportunityCard', () => {
     expect(screen.getByText(/A+…/)).toBeInTheDocument();
   });
 
-  it('does not render delete button when onDelete is not provided', () => {
-    renderCard();
+  it('does not render edit/delete buttons when user is not the owner', () => {
+    renderCard({ currentUserId: 'otro-usuario', onDelete: jest.fn() });
+    expect(screen.queryByLabelText('Eliminar oportunidad')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Editar oportunidad')).not.toBeInTheDocument();
+  });
+
+  it('does not render buttons when no currentUserId is provided', () => {
+    renderCard({ onDelete: jest.fn() });
     expect(screen.queryByLabelText('Eliminar oportunidad')).not.toBeInTheDocument();
   });
 
-  it('renders delete button when onDelete is provided', () => {
-    renderCard({ onDelete: jest.fn() });
+  it('renders delete button when user is the owner and onDelete is provided', () => {
+    renderCard({ currentUserId: OWNER_ID, onDelete: jest.fn() });
     expect(screen.getByLabelText('Eliminar oportunidad')).toBeInTheDocument();
   });
 
-  it('calls onDelete with the opportunity id', () => {
+  it('calls onDelete with the opportunity id when owner clicks delete', () => {
     const onDelete = jest.fn();
-    renderCard({ onDelete });
+    renderCard({ currentUserId: OWNER_ID, onDelete });
     fireEvent.click(screen.getByLabelText('Eliminar oportunidad'));
     expect(onDelete).toHaveBeenCalledWith('uuid-1');
   });
@@ -71,8 +80,8 @@ describe('OpportunityCard', () => {
     expect(screen.queryByText(/Fecha límite/)).not.toBeInTheDocument();
   });
 
-  it('renders edit link pointing to the correct route', () => {
-    renderCard();
+  it('renders edit link pointing to the correct route when user is the owner', () => {
+    renderCard({ currentUserId: OWNER_ID });
     const editLink = screen.getByLabelText('Editar oportunidad').closest('a');
     expect(editLink).toHaveAttribute('href', '/opportunities/uuid-1/edit');
   });

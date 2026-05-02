@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { User, UserRole } from './entities/user.entity';
@@ -106,6 +106,23 @@ describe('AuthService', () => {
       await expect(
         service.login({ email: 'test@example.com', password: 'wrong' }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('getMe', () => {
+    it('returns user by id', async () => {
+      mockUserRepo.findOneBy.mockResolvedValue(baseUser);
+
+      const result = await service.getMe('user-uuid-1');
+
+      expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({ id: 'user-uuid-1' });
+      expect(result).toEqual(baseUser);
+    });
+
+    it('throws NotFoundException when user does not exist', async () => {
+      mockUserRepo.findOneBy.mockResolvedValue(null);
+
+      await expect(service.getMe('no-existe')).rejects.toThrow(NotFoundException);
     });
   });
 });
