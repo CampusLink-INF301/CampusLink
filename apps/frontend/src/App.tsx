@@ -6,6 +6,7 @@ import { OpportunityCreatePage } from './pages/opportunities/OpportunityCreatePa
 import { OpportunityEditPage } from './pages/opportunities/OpportunityEditPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { ProfilePage } from './pages/profile/ProfilePage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/opportunities/:id/edit" element={<OpportunityEditPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </BrowserRouter>
   );
