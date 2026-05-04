@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { authApi } from '../../api/auth';
 import { applicationsApi } from '../../api/applications';
 import { APPLICATION_STATUS_LABELS } from '../../types/application';
@@ -24,6 +25,7 @@ export function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
@@ -35,15 +37,20 @@ export function ProfilePage() {
         setUser(userData as UserProfile);
         setApplications(appsData);
       })
-      .catch(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
+      .catch((err: unknown) => {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        } else {
+          setError('No se pudo cargar el perfil. Intenta de nuevo.');
+        }
       })
       .finally(() => setLoading(false));
   }, [navigate]);
 
   if (loading) return <p className="loading-text">Cargando perfil…</p>;
+  if (error) return <p className="form-error" role="alert">{error}</p>;
   if (!user) return null;
 
   return (
