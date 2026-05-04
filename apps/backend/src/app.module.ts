@@ -20,6 +20,11 @@ import { ApplicationsModule } from './applications/applications.module';
           config.get<string>('NODE_ENV') === 'production'
             ? { rejectUnauthorized: false }
             : false,
+        extra: {
+          max: 5,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 5000,
+        },
       }),
     }),
     OpportunitiesModule,
