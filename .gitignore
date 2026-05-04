@@ -49,3 +49,6 @@ Thumbs.db
 
 # NestJS
 dist/
+
+# Docs de trabajo interno
+docs/prompt_presentacion_pptx.md
