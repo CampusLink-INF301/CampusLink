@@ -35,6 +35,11 @@ export function ProfilePage() {
         setUser(userData as UserProfile);
         setApplications(appsData);
       })
+      .catch(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+      })
       .finally(() => setLoading(false));
   }, [navigate]);
 
