@@ -9,13 +9,20 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       const allowed = [
         'http://localhost:5173',
         process.env.FRONTEND_URL,
       ].filter(Boolean) as string[];
 
-      if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (
+        !origin ||
+        allowed.includes(origin) ||
+        origin.endsWith('.vercel.app')
+      ) {
         callback(null, true);
       } else {
         callback(new Error(`CORS blocked: ${origin}`));

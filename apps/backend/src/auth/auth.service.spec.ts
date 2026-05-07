@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { User, UserRole } from './entities/user.entity';
@@ -25,6 +29,7 @@ const baseUser: User = {
   name: 'Test User',
   password: 'hashed-password',
   role: UserRole.ESTUDIANTE,
+  suspended: false,
   createdAt: new Date('2024-01-01'),
 };
 
@@ -79,7 +84,10 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('returns user and token on valid credentials', async () => {
-      mockUserRepo.findOne.mockResolvedValue({ ...baseUser, password: 'hashed-password' });
+      mockUserRepo.findOne.mockResolvedValue({
+        ...baseUser,
+        password: 'hashed-password',
+      });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.login({
@@ -100,7 +108,10 @@ describe('AuthService', () => {
     });
 
     it('throws UnauthorizedException when password is wrong', async () => {
-      mockUserRepo.findOne.mockResolvedValue({ ...baseUser, password: 'hashed-password' });
+      mockUserRepo.findOne.mockResolvedValue({
+        ...baseUser,
+        password: 'hashed-password',
+      });
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
@@ -115,14 +126,18 @@ describe('AuthService', () => {
 
       const result = await service.getMe('user-uuid-1');
 
-      expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({ id: 'user-uuid-1' });
+      expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({
+        id: 'user-uuid-1',
+      });
       expect(result).toEqual(baseUser);
     });
 
     it('throws NotFoundException when user does not exist', async () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
 
-      await expect(service.getMe('no-existe')).rejects.toThrow(NotFoundException);
+      await expect(service.getMe('no-existe')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
