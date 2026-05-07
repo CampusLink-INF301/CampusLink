@@ -1,10 +1,24 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Application } from './entities/application.entity';
-import { Opportunity } from '../opportunities/entities/opportunity.entity';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import { Application, ApplicationStatus } from './entities/application.entity';
+import {
+  Opportunity,
+  OpportunityStatus,
+} from '../opportunities/entities/opportunity.entity';
 import { User } from '../auth/entities/user.entity';
 import { CreateApplicationDto } from './dto/create-application.dto';
+import { FinalizeOpportunityDto } from './dto/finalize-opportunity.dto';
+import { FeedbackDto } from './dto/feedback.dto';
+import { QueryApplicationDto } from './dto/query-application.dto';
+import { normalizeSearch } from '../common/util/text';
 
 @Injectable()
 export class ApplicationsService {
@@ -13,29 +27,228 @@ export class ApplicationsService {
     private readonly repo: Repository<Application>,
     @InjectRepository(Opportunity)
     private readonly opportunityRepo: Repository<Opportunity>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async apply(userId: string, dto: CreateApplicationDto): Promise<Application> {
-    const opportunity = await this.opportunityRepo.findOneBy({ id: dto.opportunityId });
-    if (!opportunity) throw new NotFoundException(`Opportunity ${dto.opportunityId} not found`);
+    const opportunity = await this.opportunityRepo.findOneBy({
+      id: dto.opportunityId,
+    });
+    if (!opportunity)
+      throw new NotFoundException(`Opportunity ${dto.opportunityId} not found`);
+
+    if (opportunity.status !== OpportunityStatus.DISPONIBLE) {
+      throw new BadRequestException(
+        'Esta oportunidad no está disponible para postular',
+      );
+    }
+
+    const deadline = opportunity.deadline;
+    if (deadline && new Date(deadline) < new Date()) {
+      throw new BadRequestException('La fecha límite de postulación ha pasado');
+    }
 
     const existing = await this.repo.findOne({
       where: { user: { id: userId }, opportunity: { id: dto.opportunityId } },
     });
-    if (existing) throw new ConflictException('Ya has postulado a esta oportunidad');
 
-    const application = this.repo.create({
-      user: { id: userId } as User,
-      opportunity: { id: dto.opportunityId } as Opportunity,
+    if (existing) {
+      if (existing.status === ApplicationStatus.CANCELADO) {
+        existing.status = ApplicationStatus.POSTULADO;
+        return this.repo.save(existing);
+      }
+      throw new ConflictException('Ya has postulado a esta oportunidad');
+    }
+
+    try {
+      const application = this.repo.create({
+        user: { id: userId } as User,
+        opportunity: { id: dto.opportunityId } as Opportunity,
+      });
+      return await this.repo.save(application);
+    } catch (err) {
+      if (
+        err instanceof QueryFailedError &&
+        (err as unknown as { code?: string }).code === '23505'
+      ) {
+        throw new ConflictException('Ya has postulado a esta oportunidad');
+      }
+      throw err;
+    }
+  }
+
+  async cancel(userId: string, applicationId: string): Promise<void> {
+    const application = await this.repo.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'opportunity'],
     });
+    if (!application)
+      throw new NotFoundException(`Application ${applicationId} not found`);
+    if (application.user.id !== userId)
+      throw new ForbiddenException('No tienes permiso');
+
+    if (application.status !== ApplicationStatus.POSTULADO) {
+      throw new BadRequestException(
+        'Solo se pueden cancelar postulaciones en estado Postulado',
+      );
+    }
+
+    const deadline = application.opportunity.deadline;
+    if (deadline && new Date(deadline) < new Date()) {
+      throw new BadRequestException(
+        'No se puede cancelar: la fecha límite ha pasado',
+      );
+    }
+
+    application.status = ApplicationStatus.CANCELADO;
+    await this.repo.save(application);
+  }
+
+  async findByOpportunity(
+    opportunityId: string,
+    requesterId: string,
+  ): Promise<Application[]> {
+    const opportunity = await this.opportunityRepo.findOne({
+      where: { id: opportunityId },
+      relations: ['publisher'],
+    });
+    if (!opportunity)
+      throw new NotFoundException(`Opportunity ${opportunityId} not found`);
+    if (opportunity.publisher?.id !== requesterId)
+      throw new ForbiddenException('No tienes permiso');
+    if (opportunity.status === OpportunityStatus.DISPONIBLE) {
+      throw new BadRequestException(
+        'La oportunidad debe haber cerrado antes de ver postulantes',
+      );
+    }
+
+    return this.repo.find({
+      where: { opportunity: { id: opportunityId } },
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async finalize(
+    opportunityId: string,
+    requesterId: string,
+    dto: FinalizeOpportunityDto,
+  ): Promise<void> {
+    const opportunity = await this.opportunityRepo.findOne({
+      where: { id: opportunityId },
+      relations: ['publisher'],
+    });
+    if (!opportunity)
+      throw new NotFoundException(`Opportunity ${opportunityId} not found`);
+    if (opportunity.publisher?.id !== requesterId)
+      throw new ForbiddenException('No tienes permiso');
+    if (opportunity.status !== OpportunityStatus.EN_EVALUACION) {
+      throw new BadRequestException(
+        'La oportunidad debe estar en evaluación para finalizarla',
+      );
+    }
+
+    const applications = await this.repo.find({
+      where: {
+        opportunity: { id: opportunityId },
+        status: ApplicationStatus.EN_EVALUACION,
+      },
+    });
+
+    const appIds = applications.map((a) => a.id);
+    for (const accId of dto.acceptedApplicationIds) {
+      if (!appIds.includes(accId)) {
+        throw new BadRequestException(
+          `Postulación ${accId} no pertenece a esta oportunidad o no está en evaluación`,
+        );
+      }
+    }
+
+    const newOppStatus =
+      dto.acceptedApplicationIds.length === 0
+        ? OpportunityStatus.DESIERTA
+        : OpportunityStatus.FINALIZADO;
+
+    await this.dataSource.transaction(async (manager) => {
+      for (const app of applications) {
+        const newStatus = dto.acceptedApplicationIds.includes(app.id)
+          ? ApplicationStatus.ACEPTADO
+          : ApplicationStatus.NO_SELECCIONADO;
+        await manager.update(
+          Application,
+          { id: app.id },
+          { status: newStatus },
+        );
+      }
+      await manager.update(
+        Opportunity,
+        { id: opportunityId },
+        { status: newOppStatus },
+      );
+    });
+  }
+
+  async setFeedback(
+    applicationId: string,
+    requesterId: string,
+    dto: FeedbackDto,
+  ): Promise<Application> {
+    const application = await this.repo.findOne({
+      where: { id: applicationId },
+      relations: ['opportunity', 'opportunity.publisher'],
+    });
+    if (!application)
+      throw new NotFoundException(`Application ${applicationId} not found`);
+    if (application.opportunity.publisher?.id !== requesterId) {
+      throw new ForbiddenException('No tienes permiso');
+    }
+
+    const { status } = application.opportunity;
+    if (
+      status !== OpportunityStatus.FINALIZADO &&
+      status !== OpportunityStatus.DESIERTA
+    ) {
+      throw new BadRequestException(
+        'Solo se puede dar feedback cuando la oportunidad está finalizada',
+      );
+    }
+
+    application.feedback = dto.feedback;
     return this.repo.save(application);
   }
 
-  findByUser(userId: string): Promise<Application[]> {
-    return this.repo.find({
-      where: { user: { id: userId } },
-      relations: ['opportunity'],
-      order: { createdAt: 'DESC' },
-    });
+  async findByUser(
+    userId: string,
+    query?: QueryApplicationDto,
+  ): Promise<Application[]> {
+    if (!query || (!query.search && !query.type && !query.status)) {
+      return this.repo.find({
+        where: { user: { id: userId } },
+        relations: ['opportunity'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+
+    const qb = this.repo
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.opportunity', 'opportunity')
+      .where('application.user_id = :userId', { userId })
+      .orderBy('application.createdAt', 'DESC');
+
+    if (query.status) {
+      qb.andWhere('application.status = :status', { status: query.status });
+    }
+    if (query.type) {
+      qb.andWhere('opportunity.type = :type', { type: query.type });
+    }
+    if (query.search) {
+      const normalized = normalizeSearch(query.search);
+      qb.andWhere('opportunity.searchText ILIKE :search', {
+        search: `%${normalized}%`,
+      });
+    }
+
+    return qb.getMany();
   }
 }
