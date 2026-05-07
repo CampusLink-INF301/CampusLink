@@ -19,6 +19,8 @@ import { FinalizeOpportunityDto } from './dto/finalize-opportunity.dto';
 import { FeedbackDto } from './dto/feedback.dto';
 import { QueryApplicationDto } from './dto/query-application.dto';
 import { normalizeSearch } from '../common/util/text';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class ApplicationsService {
@@ -29,6 +31,7 @@ export class ApplicationsService {
     private readonly opportunityRepo: Repository<Opportunity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async apply(userId: string, dto: CreateApplicationDto): Promise<Application> {
@@ -56,6 +59,7 @@ export class ApplicationsService {
     if (existing) {
       if (existing.status === ApplicationStatus.CANCELADO) {
         existing.status = ApplicationStatus.POSTULADO;
+        existing.formResponses = dto.formResponses ?? null;
         return this.repo.save(existing);
       }
       throw new ConflictException('Ya has postulado a esta oportunidad');
@@ -65,6 +69,7 @@ export class ApplicationsService {
       const application = this.repo.create({
         user: { id: userId } as User,
         opportunity: { id: dto.opportunityId } as Opportunity,
+        formResponses: dto.formResponses ?? null,
       });
       return await this.repo.save(application);
     } catch (err) {
@@ -170,6 +175,14 @@ export class ApplicationsService {
         ? OpportunityStatus.DESIERTA
         : OpportunityStatus.FINALIZADO;
 
+    const applicationsWithUsers = await this.repo.find({
+      where: {
+        opportunity: { id: opportunityId },
+        status: ApplicationStatus.EN_EVALUACION,
+      },
+      relations: ['user'],
+    });
+
     await this.dataSource.transaction(async (manager) => {
       for (const app of applications) {
         const newStatus = dto.acceptedApplicationIds.includes(app.id)
@@ -187,6 +200,19 @@ export class ApplicationsService {
         { status: newOppStatus },
       );
     });
+
+    // Notify applicants of their result
+    for (const app of applicationsWithUsers) {
+      const isAccepted = dto.acceptedApplicationIds.includes(app.id);
+      await this.notificationsService.create(
+        app.user.id,
+        NotificationType.APPLICATION_RESULT,
+        isAccepted
+          ? `¡Fuiste aceptado en "${opportunity.title}"!`
+          : `No fuiste seleccionado en "${opportunity.title}".`,
+        opportunityId,
+      );
+    }
   }
 
   async setFeedback(
@@ -196,7 +222,7 @@ export class ApplicationsService {
   ): Promise<Application> {
     const application = await this.repo.findOne({
       where: { id: applicationId },
-      relations: ['opportunity', 'opportunity.publisher'],
+      relations: ['opportunity', 'opportunity.publisher', 'user'],
     });
     if (!application)
       throw new NotFoundException(`Application ${applicationId} not found`);
@@ -215,7 +241,16 @@ export class ApplicationsService {
     }
 
     application.feedback = dto.feedback;
-    return this.repo.save(application);
+    const saved = await this.repo.save(application);
+
+    await this.notificationsService.create(
+      application.user.id,
+      NotificationType.APPLICATION_FEEDBACK,
+      `Recibiste feedback en "${application.opportunity.title}".`,
+      applicationId,
+    );
+
+    return saved;
   }
 
   async findByUser(

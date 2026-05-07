@@ -1,4 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { notificationsApi } from '../api/notifications';
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -10,6 +12,19 @@ export function Navbar() {
   const isPublisher =
     currentUser?.role === 'docente' || currentUser?.role === 'institucion';
   const isAdmin = currentUser?.role === 'admin';
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnread = useCallback(() => {
+    if (!token || isAdmin) return;
+    notificationsApi.getUnreadCount().then(setUnreadCount).catch(() => {});
+  }, [token, isAdmin]);
+
+  useEffect(() => {
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -42,7 +57,17 @@ export function Navbar() {
                 <Link to="/admin/opportunities" className="nav-link">Oportunidades (Admin)</Link>
               </>
             )}
-            {!isAdmin && <Link to="/profile" className="nav-link">Mi Perfil</Link>}
+            {!isAdmin && (
+              <>
+                <Link to="/notifications" className="nav-link nav-link-bell">
+                  🔔
+                  {unreadCount > 0 && (
+                    <span className="badge-unread">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                  )}
+                </Link>
+                <Link to="/profile" className="nav-link">Mi Perfil</Link>
+              </>
+            )}
             <button onClick={handleLogout} className="btn btn-logout btn-sm">
               Salir
             </button>

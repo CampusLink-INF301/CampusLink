@@ -5,6 +5,7 @@ import { OpportunitiesModule } from './opportunities/opportunities.module';
 import { AuthModule } from './auth/auth.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { AdminModule } from './admin/admin.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AdminModule } from './admin/admin.module';
     AuthModule,
     ApplicationsModule,
     AdminModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
