@@ -1,15 +1,32 @@
 import client from './client';
-import type { Opportunity, CreateOpportunityPayload, UpdateOpportunityPayload } from '../types/opportunity';
-import type { OpportunityType } from '../types/opportunity';
+import type { Opportunity, OpportunityType, OpportunityStatus, CreateOpportunityPayload, UpdateOpportunityPayload } from '../types/opportunity';
 
 export interface OpportunityQuery {
   search?: string;
   type?: OpportunityType;
+  limit?: number;
+  offset?: number;
+}
+
+export interface PublisherHistoryQuery {
+  search?: string;
+  type?: OpportunityType;
+  status?: OpportunityStatus;
+  sortBy?: 'createdAt' | 'deadline' | 'status';
+  sortDir?: 'ASC' | 'DESC';
+  page?: number;
 }
 
 export const opportunitiesApi = {
   getAll: (params?: OpportunityQuery) =>
-    client.get<Opportunity[]>('/opportunities', { params }).then((r) => r.data),
+    client
+      .get<{ items: Opportunity[]; total: number; hasMore: boolean }>('/opportunities', { params })
+      .then((r) => r.data),
+
+  getMine: (params?: PublisherHistoryQuery) =>
+    client
+      .get<{ items: Opportunity[]; total: number }>('/opportunities/mine', { params })
+      .then((r) => r.data),
 
   getById: (id: string) =>
     client.get<Opportunity>(`/opportunities/${id}`).then((r) => r.data),
