@@ -22,5 +22,6 @@ export interface Application {
   user?: { id: string; name: string; email: string };
   status: ApplicationStatus;
   feedback?: string | null;
+  formResponses?: Record<string, string | string[]> | null;
   createdAt: string;
 }

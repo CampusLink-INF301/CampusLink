@@ -64,6 +64,21 @@ export class Opportunity {
   @Column({ type: 'text', default: '' })
   searchText: string;
 
+  @Column({ type: 'jsonb', nullable: true })
+  formFields: Array<{
+    id: string;
+    label: string;
+    type:
+      | 'text_short'
+      | 'text_long'
+      | 'select_single'
+      | 'select_multiple'
+      | 'number'
+      | 'date';
+    options?: string[];
+    required: boolean;
+  }> | null;
+
   @ManyToOne(() => User, { nullable: true, eager: false })
   publisher: User;
 

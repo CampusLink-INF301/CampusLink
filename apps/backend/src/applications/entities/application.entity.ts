@@ -39,6 +39,9 @@ export class Application {
   @Column({ type: 'text', nullable: true })
   feedback: string | null;
 
+  @Column({ type: 'jsonb', nullable: true })
+  formResponses: Record<string, string | string[]> | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }
