@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { OpportunityType, OPPORTUNITY_TYPE_LABELS } from '../types/opportunity';
-import type { CreateOpportunityPayload } from '../types/opportunity';
+import type { CreateOpportunityPayload, FormField } from '../types/opportunity';
+import { FormFieldBuilder } from './FormFieldBuilder';
 
 interface Props {
   initial?: Partial<CreateOpportunityPayload>;
@@ -14,6 +15,7 @@ export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar
   const [type, setType]                 = useState<OpportunityType>(initial.type ?? OpportunityType.OTRO);
   const [requirements, setRequirements] = useState(initial.requirements ?? '');
   const [deadline, setDeadline]         = useState(initial.deadline?.slice(0, 10) ?? '');
+  const [formFields, setFormFields]     = useState<FormField[]>(initial.formFields ?? []);
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState('');
 
@@ -28,6 +30,7 @@ export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar
         type,
         requirements: requirements || undefined,
         deadline: deadline || undefined,
+        formFields: formFields.length > 0 ? formFields : undefined,
       });
     } catch {
       setError('Ocurrió un error. Intenta de nuevo.');
@@ -106,6 +109,10 @@ export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar
           onChange={(e) => setDeadline(e.target.value)}
           style={{ maxWidth: 200 }}
         />
+      </div>
+
+      <div className="form-group">
+        <FormFieldBuilder fields={formFields} onChange={setFormFields} />
       </div>
 
       <div className="form-actions">

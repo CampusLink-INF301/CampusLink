@@ -10,8 +10,8 @@ export interface ApplicationQuery {
 }
 
 export const applicationsApi = {
-  apply: (opportunityId: string) =>
-    client.post<Application>('/applications', { opportunityId }).then((r) => r.data),
+  apply: (opportunityId: string, formResponses?: Record<string, string | string[]>) =>
+    client.post<Application>('/applications', { opportunityId, formResponses }).then((r) => r.data),
   cancel: (id: string) =>
     client.delete(`/applications/${id}`).then((r) => r.data),
   getMine: (params?: ApplicationQuery) =>

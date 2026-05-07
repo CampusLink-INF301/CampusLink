@@ -4,7 +4,8 @@ import { opportunitiesApi } from '../../api/opportunities';
 import { applicationsApi } from '../../api/applications';
 import { OPPORTUNITY_TYPE_LABELS, OPPORTUNITY_STATUS_LABELS, OpportunityStatus } from '../../types/opportunity';
 import { DeadlineWarning } from '../../components/DeadlineWarning';
-import type { Opportunity } from '../../types/opportunity';
+import { FormFiller } from '../../components/FormFiller';
+import type { Opportunity, FormField } from '../../types/opportunity';
 
 const SIXTY_MINUTES_MS = 60 * 60 * 1000;
 
@@ -12,9 +13,10 @@ export function OpportunityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(true);
-  const [applyStatus, setApplyStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [applyStatus, setApplyStatus] = useState<'idle' | 'filling' | 'loading' | 'done' | 'error'>('idle');
   const [applyError, setApplyError] = useState('');
   const [expired, setExpired] = useState(false);
+  const [formResponses, setFormResponses] = useState<Record<string, string | string[]>>({});
 
   const storedUser = localStorage.getItem('user');
   const currentUser: { id: string; role: string } | null = storedUser ? JSON.parse(storedUser) : null;
@@ -28,12 +30,24 @@ export function OpportunityDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleApply = async () => {
+  const hasForm = (opp: Opportunity) =>
+    Array.isArray(opp.formFields) && opp.formFields.length > 0;
+
+  const handleApplyClick = () => {
+    if (!opportunity || expired) return;
+    if (hasForm(opportunity)) {
+      setApplyStatus('filling');
+    } else {
+      void handleSubmitApply({});
+    }
+  };
+
+  const handleSubmitApply = async (responses: Record<string, string | string[]>) => {
     if (!id || expired) return;
     setApplyStatus('loading');
     setApplyError('');
     try {
-      await applicationsApi.apply(id);
+      await applicationsApi.apply(id, Object.keys(responses).length > 0 ? responses : undefined);
       setApplyStatus('done');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
@@ -41,6 +55,11 @@ export function OpportunityDetailPage() {
       setApplyError(msg || 'Error al postular.');
       setApplyStatus('error');
     }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void handleSubmitApply(formResponses);
   };
 
   if (loading) return <p className="loading-text">Cargando…</p>;
@@ -58,6 +77,8 @@ export function OpportunityDetailPage() {
     opportunity.deadline &&
     new Date(opportunity.deadline).getTime() - now < SIXTY_MINUTES_MS &&
     new Date(opportunity.deadline).getTime() > now;
+
+  const formFields = (opportunity.formFields ?? []) as FormField[];
 
   return (
     <main className="page">
@@ -122,11 +143,36 @@ export function OpportunityDetailPage() {
                 <p className="form-success" data-testid="apply-success">
                   ¡Postulación enviada exitosamente!
                 </p>
+              ) : applyStatus === 'filling' ? (
+                <form onSubmit={handleFormSubmit} className="apply-form">
+                  <h3>Completa el formulario de postulación</h3>
+                  <FormFiller
+                    fields={formFields}
+                    responses={formResponses}
+                    onChange={setFormResponses}
+                  />
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setApplyStatus('idle')}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={expired}
+                    >
+                      Enviar postulación
+                    </button>
+                  </div>
+                </form>
               ) : (
                 <button
                   className="btn btn-primary"
                   data-testid="btn-apply"
-                  onClick={handleApply}
+                  onClick={handleApplyClick}
                   disabled={applyStatus === 'loading' || expired}
                 >
                   {applyStatus === 'loading' ? 'Postulando…' : 'Postular'}

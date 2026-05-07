@@ -4,6 +4,33 @@ import { applicationsApi } from '../../api/applications';
 import { APPLICATION_STATUS_LABELS } from '../../types/application';
 import { OpportunityStatus } from '../../types/opportunity';
 import type { Application } from '../../types/application';
+import type { FormField } from '../../types/opportunity';
+
+function FormResponsesView({
+  fields,
+  responses,
+}: {
+  fields: FormField[];
+  responses: Record<string, string | string[]> | null | undefined;
+}) {
+  if (!responses || Object.keys(responses).length === 0) return null;
+  return (
+    <div className="form-responses-view">
+      <strong>Respuestas del formulario:</strong>
+      {fields.map((field) => {
+        const value = responses[field.id];
+        if (value === undefined || value === null || value === '') return null;
+        const display = Array.isArray(value) ? value.join(', ') : String(value);
+        return (
+          <div key={field.id} className="form-response-item">
+            <span className="form-response-label">{field.label}:</span>{' '}
+            <span className="form-response-value">{display}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function OpportunityApplicantsPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +60,7 @@ export function OpportunityApplicantsPage() {
   const oppStatus = applications[0]?.opportunity?.status as OpportunityStatus | undefined;
   const isEnEvaluacion = oppStatus === OpportunityStatus.EN_EVALUACION;
   const isFinalized = oppStatus === OpportunityStatus.FINALIZADO || oppStatus === OpportunityStatus.DESIERTA;
+  const formFields = (applications[0]?.opportunity?.formFields ?? []) as FormField[];
 
   const toggleSelect = (appId: string) => {
     setSelected((prev) => {
@@ -99,6 +127,11 @@ export function OpportunityApplicantsPage() {
               </div>
             )}
           </div>
+
+          {formFields.length > 0 && (
+            <FormResponsesView fields={formFields} responses={app.formResponses} />
+          )}
+
           {isFinalized && (
             <div style={{ marginTop: 8 }}>
               <textarea
@@ -112,7 +145,7 @@ export function OpportunityApplicantsPage() {
               <button
                 className="btn btn-secondary btn-sm"
                 style={{ marginTop: 4 }}
-                onClick={() => handleSaveFeedback(app.id)}
+                onClick={() => void handleSaveFeedback(app.id)}
                 data-testid={`btn-save-feedback-${app.id}`}
               >
                 Guardar feedback
@@ -126,7 +159,7 @@ export function OpportunityApplicantsPage() {
         <button
           className="btn btn-primary"
           style={{ marginTop: 16 }}
-          onClick={handleFinalize}
+          onClick={() => void handleFinalize()}
           disabled={submitting}
           data-testid="btn-finalize"
         >
