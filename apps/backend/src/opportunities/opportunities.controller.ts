@@ -35,7 +35,7 @@ export class OpportunitiesController {
 
   @Get('mine')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION)
+  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION, UserRole.ESTUDIANTE)
   findMine(@Query() dto: PublisherHistoryDto, @Request() req: AuthRequest) {
     return this.service.findByPublisher(req.user.id, dto);
   }
@@ -47,14 +47,21 @@ export class OpportunitiesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION)
+  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION, UserRole.ESTUDIANTE)
   create(@Body() dto: CreateOpportunityDto, @Request() req: AuthRequest) {
-    return this.service.create(dto, req.user.id);
+    return this.service.create(dto, req.user.id, req.user.role);
+  }
+
+  @Post(':id/clone')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION, UserRole.ESTUDIANTE)
+  clone(@Param('id') id: string, @Request() req: AuthRequest) {
+    return this.service.clone(id, req.user.id, req.user.role);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION)
+  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION, UserRole.ESTUDIANTE)
   update(
     @Param('id') id: string,
     @Body() dto: UpdateOpportunityDto,
@@ -65,7 +72,7 @@ export class OpportunitiesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION)
+  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION, UserRole.ESTUDIANTE)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string, @Request() req: AuthRequest) {
     return this.service.remove(id, req.user.id);
