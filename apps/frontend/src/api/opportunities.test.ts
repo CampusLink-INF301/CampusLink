@@ -1,6 +1,6 @@
 import { opportunitiesApi } from './opportunities';
 import client from './client';
-import { OpportunityType } from '../types/opportunity';
+import { OpportunityType, OpportunityStatus } from '../types/opportunity';
 import type { Opportunity } from '../types/opportunity';
 
 jest.mock('./client');
@@ -12,7 +12,7 @@ const mockOpportunity: Opportunity = {
   title: 'Tutoría de Cálculo',
   description: 'Descripción',
   type: OpportunityType.TUTORIA,
-  isActive: true,
+  status: OpportunityStatus.DISPONIBLE,
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
 };
@@ -23,23 +23,35 @@ beforeEach(() => {
 
 describe('opportunitiesApi', () => {
   describe('getAll', () => {
-    it('fetches all opportunities without params', async () => {
-      mockedClient.get.mockResolvedValue({ data: [mockOpportunity] });
+    it('fetches paginated opportunities without params', async () => {
+      const paged = { items: [mockOpportunity], total: 1, hasMore: false };
+      mockedClient.get.mockResolvedValue({ data: paged });
 
       const result = await opportunitiesApi.getAll();
 
       expect(mockedClient.get).toHaveBeenCalledWith('/opportunities', { params: undefined });
-      expect(result).toEqual([mockOpportunity]);
+      expect(result).toEqual(paged);
     });
 
-    it('passes search and type query params', async () => {
-      mockedClient.get.mockResolvedValue({ data: [mockOpportunity] });
+    it('passes search, type and pagination params', async () => {
+      const paged = { items: [mockOpportunity], total: 1, hasMore: false };
+      mockedClient.get.mockResolvedValue({ data: paged });
 
-      await opportunitiesApi.getAll({ search: 'cálculo', type: OpportunityType.TUTORIA });
+      await opportunitiesApi.getAll({ search: 'cálculo', type: OpportunityType.TUTORIA, limit: 20, offset: 0 });
 
       expect(mockedClient.get).toHaveBeenCalledWith('/opportunities', {
-        params: { search: 'cálculo', type: OpportunityType.TUTORIA },
+        params: { search: 'cálculo', type: OpportunityType.TUTORIA, limit: 20, offset: 0 },
       });
+    });
+
+    it('returns hasMore true when more items exist', async () => {
+      const paged = { items: [mockOpportunity], total: 5, hasMore: true };
+      mockedClient.get.mockResolvedValue({ data: paged });
+
+      const result = await opportunitiesApi.getAll({ limit: 1, offset: 0 });
+
+      expect(result.hasMore).toBe(true);
+      expect(result.total).toBe(5);
     });
   });
 
