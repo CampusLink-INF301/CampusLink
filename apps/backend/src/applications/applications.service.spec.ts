@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
 import { Application, ApplicationStatus } from './entities/application.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   Opportunity,
   OpportunityType,
@@ -80,6 +81,7 @@ const baseOpportunity: Opportunity = {
   deadline: null as unknown as Date,
   status: OpportunityStatus.DISPONIBLE,
   searchText: '',
+  formFields: null,
   publisher,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -92,6 +94,7 @@ const baseApplication: Application = {
   opportunity: baseOpportunity,
   status: ApplicationStatus.POSTULADO,
   feedback: null,
+  formResponses: null,
   createdAt: new Date(),
 };
 
@@ -100,6 +103,10 @@ describe('ApplicationsService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    const mockNotificationsService = {
+      create: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -110,6 +117,7 @@ describe('ApplicationsService', () => {
           useValue: mockOpportunityRepo,
         },
         { provide: getDataSourceToken(), useValue: mockDataSource },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 
@@ -128,6 +136,7 @@ describe('ApplicationsService', () => {
       expect(mockAppRepo.create).toHaveBeenCalledWith({
         user: { id: 'user-2' },
         opportunity: { id: 'opp-1' },
+        formResponses: null,
       });
       expect(result).toEqual(baseApplication);
     });

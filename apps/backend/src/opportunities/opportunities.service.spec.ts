@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { OpportunitiesService } from './opportunities.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   Opportunity,
   OpportunityType,
@@ -39,6 +40,8 @@ const mockAppQbChain = {
 };
 
 const mockAppRepo = {
+  find: jest.fn(),
+  count: jest.fn(),
   createQueryBuilder: jest.fn().mockReturnValue(mockAppQbChain),
 };
 
@@ -61,6 +64,7 @@ const baseOpportunity: Opportunity = {
   deadline: null as unknown as Date,
   status: OpportunityStatus.DISPONIBLE,
   searchText: 'tutoria de calculo apoyo en calculo diferencial',
+  formFields: null,
   publisher,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
@@ -73,11 +77,16 @@ describe('OpportunitiesService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
+    const mockNotificationsService = {
+      createMany: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OpportunitiesService,
         { provide: getRepositoryToken(Opportunity), useValue: mockRepo },
         { provide: getRepositoryToken(Application), useValue: mockAppRepo },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 
@@ -180,10 +189,11 @@ describe('OpportunitiesService', () => {
       mockRepo.create.mockReturnValue(created);
       mockRepo.save.mockResolvedValue(created);
 
-      const result = await service.create(dto, 'user-1');
+      const result = await service.create(dto, 'user-1', UserRole.DOCENTE);
 
       expect(mockRepo.create).toHaveBeenCalledWith({
         ...dto,
+        formFields: null,
         publisher: { id: 'user-1' },
       });
       expect(mockRepo.save).toHaveBeenCalledWith(created);
@@ -194,6 +204,7 @@ describe('OpportunitiesService', () => {
   describe('update', () => {
     it('updates an opportunity when the user is the publisher', async () => {
       mockRepo.findOne.mockResolvedValue({ ...baseOpportunity });
+      mockAppRepo.count.mockResolvedValue(0);
       const updated = { ...baseOpportunity, title: 'Título actualizado' };
       mockRepo.save.mockResolvedValue(updated);
 
@@ -226,6 +237,7 @@ describe('OpportunitiesService', () => {
   describe('remove', () => {
     it('removes an opportunity when the user is the publisher', async () => {
       mockRepo.findOne.mockResolvedValue(baseOpportunity);
+      mockAppRepo.find.mockResolvedValue([]);
       mockRepo.remove.mockResolvedValue(undefined);
 
       await service.remove('uuid-1', 'user-1');

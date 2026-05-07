@@ -40,6 +40,7 @@ const baseOpportunity: Opportunity = {
   deadline: null as unknown as Date,
   status: OpportunityStatus.DISPONIBLE,
   searchText: '',
+  formFields: null,
   publisher: baseUser,
   createdAt: new Date(),
   updatedAt: new Date(),
