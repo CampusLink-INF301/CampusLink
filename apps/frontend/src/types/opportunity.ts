@@ -20,6 +20,22 @@ export const OPPORTUNITY_TYPE_LABELS: Record<OpportunityType, string> = {
   [OpportunityType.OTRO]: 'Otro',
 };
 
+export enum OpportunityStatus {
+  DISPONIBLE = 'disponible',
+  EN_EVALUACION = 'en_evaluacion',
+  FINALIZADO = 'finalizado',
+  DESIERTA = 'desierta',
+  BLOQUEADA = 'bloqueada',
+}
+
+export const OPPORTUNITY_STATUS_LABELS: Record<OpportunityStatus, string> = {
+  [OpportunityStatus.DISPONIBLE]: 'Disponible',
+  [OpportunityStatus.EN_EVALUACION]: 'En evaluación',
+  [OpportunityStatus.FINALIZADO]: 'Finalizado',
+  [OpportunityStatus.DESIERTA]: 'Desierta',
+  [OpportunityStatus.BLOQUEADA]: 'Bloqueada',
+};
+
 export interface Opportunity {
   id: string;
   title: string;
@@ -27,7 +43,7 @@ export interface Opportunity {
   type: OpportunityType;
   requirements?: string;
   deadline?: string;
-  isActive: boolean;
+  status: OpportunityStatus;
   publisher?: { id: string; name: string };
   createdAt: string;
   updatedAt: string;

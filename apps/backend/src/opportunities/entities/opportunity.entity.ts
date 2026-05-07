@@ -5,8 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  BeforeInsert,
+  BeforeUpdate,
 } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
+import { normalizeSearch } from '../../common/util/text';
 
 export enum OpportunityType {
   TUTORIA = 'tutoria',
@@ -17,6 +20,14 @@ export enum OpportunityType {
   VOLUNTARIADO = 'voluntariado',
   INVESTIGACION = 'investigacion',
   OTRO = 'otro',
+}
+
+export enum OpportunityStatus {
+  DISPONIBLE = 'disponible',
+  EN_EVALUACION = 'en_evaluacion',
+  FINALIZADO = 'finalizado',
+  DESIERTA = 'desierta',
+  BLOQUEADA = 'bloqueada',
 }
 
 @Entity('opportunities')
@@ -30,7 +41,11 @@ export class Opportunity {
   @Column('text')
   description: string;
 
-  @Column({ type: 'enum', enum: OpportunityType, default: OpportunityType.OTRO })
+  @Column({
+    type: 'enum',
+    enum: OpportunityType,
+    default: OpportunityType.OTRO,
+  })
   type: OpportunityType;
 
   @Column({ nullable: true })
@@ -39,8 +54,15 @@ export class Opportunity {
   @Column({ type: 'date', nullable: true })
   deadline: Date;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({
+    type: 'enum',
+    enum: OpportunityStatus,
+    default: OpportunityStatus.DISPONIBLE,
+  })
+  status: OpportunityStatus;
+
+  @Column({ type: 'text', default: '' })
+  searchText: string;
 
   @ManyToOne(() => User, { nullable: true, eager: false })
   publisher: User;
@@ -50,4 +72,12 @@ export class Opportunity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  computeSearchText() {
+    this.searchText = normalizeSearch(
+      `${this.title ?? ''} ${this.description ?? ''} ${this.requirements ?? ''}`,
+    );
+  }
 }

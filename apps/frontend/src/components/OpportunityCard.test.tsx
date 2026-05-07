@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { OpportunityCard } from './OpportunityCard';
-import { OpportunityType } from '../types/opportunity';
+import { OpportunityType, OpportunityStatus } from '../types/opportunity';
 import type { Opportunity } from '../types/opportunity';
 
 const OWNER_ID = 'user-owner-1';
@@ -11,7 +11,7 @@ const baseOpportunity: Opportunity = {
   title: 'Tutoría de Cálculo',
   description: 'Apoyo en cálculo diferencial e integral para estudiantes de primer año.',
   type: OpportunityType.TUTORIA,
-  isActive: true,
+  status: OpportunityStatus.DISPONIBLE,
   publisher: { id: OWNER_ID, name: 'Dueño' },
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',

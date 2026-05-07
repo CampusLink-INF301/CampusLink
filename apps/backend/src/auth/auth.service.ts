@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -23,7 +28,10 @@ export class AuthService {
     const user = this.userRepo.create({ ...dto, password: hashed });
     const saved = await this.userRepo.save(user);
     const { password: _, ...result } = saved as User & { password: string };
-    return { user: result, token: this.jwtService.sign({ sub: saved.id, role: saved.role }) };
+    return {
+      user: result,
+      token: this.jwtService.sign({ sub: saved.id, role: saved.role }),
+    };
   }
 
   async getMe(userId: string) {
@@ -43,6 +51,9 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const { password: _, ...result } = user;
-    return { user: result, token: this.jwtService.sign({ sub: user.id, role: user.role }) };
+    return {
+      user: result,
+      token: this.jwtService.sign({ sub: user.id, role: user.role }),
+    };
   }
 }

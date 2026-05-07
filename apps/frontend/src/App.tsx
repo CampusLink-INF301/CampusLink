@@ -7,6 +7,10 @@ import { OpportunityEditPage } from './pages/opportunities/OpportunityEditPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { ProfilePage } from './pages/profile/ProfilePage';
+import { PublisherHistoryPage } from './pages/opportunities/PublisherHistoryPage';
+import { OpportunityApplicantsPage } from './pages/opportunities/OpportunityApplicantsPage';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { AdminOpportunitiesPage } from './pages/admin/AdminOpportunitiesPage';
 
 function App() {
   return (
@@ -21,6 +25,10 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/my-opportunities" element={<PublisherHistoryPage />} />
+        <Route path="/my-opportunities/:id/applicants" element={<OpportunityApplicantsPage />} />
+        <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/admin/opportunities" element={<AdminOpportunitiesPage />} />
       </Routes>
     </BrowserRouter>
   );

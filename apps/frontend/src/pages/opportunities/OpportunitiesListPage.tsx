@@ -1,67 +1,97 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { opportunitiesApi } from '../../api/opportunities';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import { SearchBar } from '../../components/SearchBar';
 import type { Opportunity, OpportunityType } from '../../types/opportunity';
 
+const LIMIT = 20;
+
 export function OpportunitiesListPage() {
-  const storedUser = localStorage.getItem('user');
-  const currentUserId: string | undefined =
-    storedUser ? (JSON.parse(storedUser) as { id: string }).id : undefined;
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<Opportunity[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const activeSearch = useRef({ search: '', type: undefined as OpportunityType | undefined });
 
-  const load = useCallback(async (search?: string, type?: OpportunityType) => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await opportunitiesApi.getAll({ search, type });
-      setOpportunities(data);
-    } catch {
-      setError('Error al cargar oportunidades.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const loadPage = useCallback(
+    async (currentOffset: number, currentSearch: string, currentType?: OpportunityType) => {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await opportunitiesApi.getAll({
+          search: currentSearch || undefined,
+          type: currentType,
+          limit: LIMIT,
+          offset: currentOffset,
+        });
+        setItems((prev) => (currentOffset === 0 ? data.items : [...prev, ...data.items]));
+        setHasMore(data.hasMore);
+        setOffset(currentOffset + data.items.length);
+      } catch {
+        setError('Error al cargar oportunidades.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
-  useEffect(() => { load(); }, [load]);
+  const resetAndLoad = useCallback(
+    (newSearch: string, newType?: OpportunityType) => {
+      activeSearch.current = { search: newSearch, type: newType };
+      setItems([]);
+      setOffset(0);
+      setHasMore(true);
+      void loadPage(0, newSearch, newType);
+    },
+    [loadPage],
+  );
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta oportunidad?')) return;
-    await opportunitiesApi.remove(id);
-    setOpportunities((prev) => prev.filter((o) => o.id !== id));
-  };
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadPage(0, '', undefined); }, [loadPage]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && hasMore) {
+          const { search: s, type: t } = activeSearch.current;
+          void loadPage(offset, s, t);
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loading, hasMore, offset, loadPage]);
 
   return (
     <main className="page">
       <div className="page-header">
         <h1>Oportunidades</h1>
-        <Link to="/opportunities/new" className="btn btn-primary" data-testid="btn-new-opportunity">
-          + Nueva oportunidad
-        </Link>
       </div>
 
-      <SearchBar onSearch={load} />
-
-      {loading && <p className="loading-text">Cargando oportunidades…</p>}
+      <SearchBar onSearch={resetAndLoad} />
 
       {error && <p className="form-error" role="alert">{error}</p>}
 
-      {!loading && !error && opportunities.length === 0 && (
+      {!loading && !error && items.length === 0 && (
         <div className="empty-state">
           <div className="empty-state-icon">📋</div>
           <p data-testid="empty-message">No hay oportunidades disponibles.</p>
-          <p style={{ fontSize: 13, marginTop: 6 }}>
-            <Link to="/opportunities/new">Publica la primera oportunidad</Link>
-          </p>
         </div>
       )}
 
-      {!loading && opportunities.map((o) => (
-        <OpportunityCard key={o.id} opportunity={o} onDelete={handleDelete} currentUserId={currentUserId} />
+      {items.map((o) => (
+        <OpportunityCard key={o.id} opportunity={o} />
       ))}
+
+      {loading && <p className="loading-text">Cargando oportunidades…</p>}
+
+      <div ref={sentinelRef} style={{ height: 1 }} />
     </main>
   );
 }

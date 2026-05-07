@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { opportunitiesApi } from '../../api/opportunities';
 import { applicationsApi } from '../../api/applications';
-import { OPPORTUNITY_TYPE_LABELS } from '../../types/opportunity';
+import { OPPORTUNITY_TYPE_LABELS, OPPORTUNITY_STATUS_LABELS, OpportunityStatus } from '../../types/opportunity';
+import { DeadlineWarning } from '../../components/DeadlineWarning';
 import type { Opportunity } from '../../types/opportunity';
+
+const SIXTY_MINUTES_MS = 60 * 60 * 1000;
 
 export function OpportunityDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(true);
   const [applyStatus, setApplyStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [applyError, setApplyError] = useState('');
+  const [expired, setExpired] = useState(false);
 
   const storedUser = localStorage.getItem('user');
-  const currentUser: { id: string } | null = storedUser ? JSON.parse(storedUser) : null;
+  const currentUser: { id: string; role: string } | null = storedUser ? JSON.parse(storedUser) : null;
   const isLoggedIn = !!localStorage.getItem('token');
-  const isPublisher = !!(currentUser && opportunity?.publisher?.id === currentUser.id);
+  const isStudent = currentUser?.role === 'estudiante';
 
   useEffect(() => {
     if (!id) return;
@@ -25,14 +28,8 @@ export function OpportunityDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleDelete = async () => {
-    if (!id || !confirm('¿Eliminar esta oportunidad?')) return;
-    await opportunitiesApi.remove(id);
-    navigate('/opportunities');
-  };
-
   const handleApply = async () => {
-    if (!id) return;
+    if (!id || expired) return;
     setApplyStatus('loading');
     setApplyError('');
     try {
@@ -52,6 +49,15 @@ export function OpportunityDetailPage() {
   const deadline = opportunity.deadline
     ? new Date(opportunity.deadline).toLocaleDateString('es-CL')
     : null;
+
+  const isDisponible = opportunity.status === OpportunityStatus.DISPONIBLE;
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+  const showDeadlineWarning =
+    isDisponible &&
+    opportunity.deadline &&
+    new Date(opportunity.deadline).getTime() - now < SIXTY_MINUTES_MS &&
+    new Date(opportunity.deadline).getTime() > now;
 
   return (
     <main className="page">
@@ -87,15 +93,32 @@ export function OpportunityDetailPage() {
             </span>
           )}
           <span className="detail-meta-item">
+            <strong>Estado:</strong>{' '}
+            <span className={`badge badge-status-${opportunity.status}`} data-testid="opportunity-status">
+              {OPPORTUNITY_STATUS_LABELS[opportunity.status]}
+            </span>
+          </span>
+          <span className="detail-meta-item">
             <strong>Publicado:</strong>{' '}
             {new Date(opportunity.createdAt).toLocaleDateString('es-CL')}
           </span>
         </div>
 
+        {showDeadlineWarning && (
+          <DeadlineWarning
+            deadline={opportunity.deadline as string | Date}
+            onExpired={() => setExpired(true)}
+          />
+        )}
+
         <div className="detail-actions">
-          {isLoggedIn && !isPublisher && (
+          {isLoggedIn && isStudent && (
             <div>
-              {applyStatus === 'done' ? (
+              {!isDisponible ? (
+                <p className="form-info" data-testid="apply-unavailable">
+                  Esta oportunidad ya no está disponible para postular.
+                </p>
+              ) : applyStatus === 'done' ? (
                 <p className="form-success" data-testid="apply-success">
                   ¡Postulación enviada exitosamente!
                 </p>
@@ -104,7 +127,7 @@ export function OpportunityDetailPage() {
                   className="btn btn-primary"
                   data-testid="btn-apply"
                   onClick={handleApply}
-                  disabled={applyStatus === 'loading'}
+                  disabled={applyStatus === 'loading' || expired}
                 >
                   {applyStatus === 'loading' ? 'Postulando…' : 'Postular'}
                 </button>
@@ -113,21 +136,6 @@ export function OpportunityDetailPage() {
                 <p className="form-error" data-testid="apply-error">{applyError}</p>
               )}
             </div>
-          )}
-
-          {isPublisher && (
-            <>
-              <Link to={`/opportunities/${opportunity.id}/edit`}>
-                <button className="btn btn-secondary" data-testid="btn-edit">Editar</button>
-              </Link>
-              <button
-                className="btn btn-danger"
-                data-testid="btn-delete"
-                onClick={handleDelete}
-              >
-                Eliminar
-              </button>
-            </>
           )}
         </div>
       </div>

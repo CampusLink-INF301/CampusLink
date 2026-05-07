@@ -29,6 +29,9 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.ESTUDIANTE })
   role: UserRole;
 
+  @Column({ default: false })
+  suspended: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 }

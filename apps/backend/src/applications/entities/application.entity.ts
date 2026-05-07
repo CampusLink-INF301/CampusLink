@@ -11,9 +11,10 @@ import { Opportunity } from '../../opportunities/entities/opportunity.entity';
 
 export enum ApplicationStatus {
   POSTULADO = 'postulado',
-  EN_REVISION = 'en_revision',
+  EN_EVALUACION = 'en_evaluacion',
   ACEPTADO = 'aceptado',
-  RECHAZADO = 'rechazado',
+  NO_SELECCIONADO = 'no_seleccionado',
+  CANCELADO = 'cancelado',
 }
 
 @Entity('applications')
@@ -28,8 +29,15 @@ export class Application {
   @ManyToOne(() => Opportunity, { nullable: false })
   opportunity: Opportunity;
 
-  @Column({ type: 'enum', enum: ApplicationStatus, default: ApplicationStatus.POSTULADO })
+  @Column({
+    type: 'enum',
+    enum: ApplicationStatus,
+    default: ApplicationStatus.POSTULADO,
+  })
   status: ApplicationStatus;
+
+  @Column({ type: 'text', nullable: true })
+  feedback: string | null;
 
   @CreateDateColumn()
   createdAt: Date;
