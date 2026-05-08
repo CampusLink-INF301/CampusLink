@@ -22,6 +22,10 @@ export function OpportunityEditPage() {
 
   if (!opportunity) return <p className="loading-text">Cargando…</p>;
 
+  if (opportunity === null) {
+    return <main className="page"><p>Cargando...</p></main>;
+  }
+
   return (
     <main className="page">
       <Link to={`/opportunities/${id}`} className="back-link">← Volver al detalle</Link>

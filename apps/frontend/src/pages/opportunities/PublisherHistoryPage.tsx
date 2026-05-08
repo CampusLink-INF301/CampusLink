@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { opportunitiesApi, PublisherHistoryQuery } from '../../api/opportunities';
+import { opportunitiesApi } from '../../api/opportunities';
+import type { PublisherHistoryQuery } from '../../api/opportunities';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import {
   OPPORTUNITY_TYPE_LABELS,

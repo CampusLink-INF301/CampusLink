@@ -81,7 +81,7 @@ export interface CreateOpportunityPayload {
   type: OpportunityType;
   requirements?: string;
   deadline?: string;
-  formFields?: FormField[];
+  formFields?: FormField[] | null;
 }
 
 export type UpdateOpportunityPayload = Partial<CreateOpportunityPayload>;
