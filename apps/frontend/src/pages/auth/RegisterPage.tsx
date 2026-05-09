@@ -9,6 +9,35 @@ export function RegisterPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  const extractErrorMessage = (value: unknown) => {
+    if (!value || typeof value !== 'object' || !('response' in value)) {
+      return 'Error al registrarse. Revisa los datos ingresados.';
+    }
+
+    const response = (value as { response?: { data?: unknown } }).response;
+    const data = response?.data;
+
+    if (
+      data &&
+      typeof data === 'object' &&
+      'message' in data &&
+      Array.isArray((data as { message?: unknown }).message)
+    ) {
+      return (data as { message: string[] }).message.join(' ');
+    }
+
+    if (
+      data &&
+      typeof data === 'object' &&
+      'message' in data &&
+      typeof (data as { message?: unknown }).message === 'string'
+    ) {
+      return (data as { message: string }).message;
+    }
+
+    return 'Error al registrarse. Revisa los datos ingresados.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -17,8 +46,8 @@ export function RegisterPage() {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       navigate('/opportunities');
-    } catch {
-      setError('Error al registrarse. El email puede estar en uso.');
+    } catch (error: unknown) {
+      setError(extractErrorMessage(error));
     }
   };
 
@@ -65,8 +94,8 @@ export function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
-              placeholder="Mínimo 6 caracteres"
+              minLength={8}
+              placeholder="Mínimo 8 caracteres"
               autoComplete="new-password"
             />
           </div>
