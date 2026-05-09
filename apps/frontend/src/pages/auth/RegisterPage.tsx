@@ -2,12 +2,21 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../../api/auth';
 
+const ROLE_OPTIONS = [
+  { value: 'estudiante', label: 'Estudiante' },
+  { value: 'docente', label: 'Docente' },
+  { value: 'institucion', label: 'Institución' },
+] as const;
+
 export function RegisterPage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [roleIndex, setRoleIndex] = useState(0);
   const [error, setError] = useState('');
+
+  const selectedRole = ROLE_OPTIONS[roleIndex];
 
   const extractErrorMessage = (value: unknown) => {
     if (!value || typeof value !== 'object' || !('response' in value)) {
@@ -42,7 +51,12 @@ export function RegisterPage() {
     e.preventDefault();
     setError('');
     try {
-      const { token, user } = await authApi.register({ name, email, password });
+      const { token, user } = await authApi.register({
+        name,
+        email,
+        password,
+        role: selectedRole.value,
+      });
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       navigate('/opportunities');
@@ -98,6 +112,24 @@ export function RegisterPage() {
               placeholder="Mínimo 8 caracteres"
               autoComplete="new-password"
             />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Rol</label>
+            <select
+              className="form-input"
+              data-testid="register-role"
+              value={roleIndex}
+              onChange={(e) => setRoleIndex(Number(e.target.value))}
+            >
+              {ROLE_OPTIONS.map((option, index) => (
+                <option key={option.value} value={index}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p style={{ marginTop: 8, fontSize: 13 }}>
+              Rol seleccionado: <strong>{selectedRole.label}</strong>
+            </p>
           </div>
           <button type="submit" data-testid="btn-register" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
             Crear cuenta

@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { OpportunitiesService } from './opportunities.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
@@ -199,6 +203,31 @@ describe('OpportunitiesService', () => {
       expect(mockRepo.save).toHaveBeenCalledWith(created);
       expect(result).toEqual(created);
     });
+
+    it('throws BadRequestException when deadline is in the past', async () => {
+      const dto = {
+        title: 'Nueva tutoría',
+        description: 'Descripción',
+        type: OpportunityType.TUTORIA,
+        deadline: '2024-01-01',
+      };
+
+      await expect(
+        service.create(dto, 'user-1', UserRole.DOCENTE),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when role cannot publish that type', async () => {
+      const dto = {
+        title: 'Práctica',
+        description: 'Descripción',
+        type: OpportunityType.PRACTICA,
+      };
+
+      await expect(
+        service.create(dto, 'user-1', UserRole.DOCENTE),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('update', () => {
@@ -232,12 +261,60 @@ describe('OpportunitiesService', () => {
         service.update('no-existe', { title: 'x' }, 'user-1'),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('throws BadRequestException when there are active applications', async () => {
+      mockRepo.findOne.mockResolvedValue({ ...baseOpportunity });
+      mockAppRepo.count.mockResolvedValue(2);
+
+      await expect(
+        service.update('uuid-1', { title: 'x' }, 'user-1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when the opportunity is near the deadline', async () => {
+      const nearDeadlineOpportunity = {
+        ...baseOpportunity,
+        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      };
+
+      mockRepo.findOne.mockResolvedValue(nearDeadlineOpportunity);
+      mockAppRepo.count.mockResolvedValue(0);
+
+      await expect(
+        service.update('uuid-1', { title: 'x' }, 'user-1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when the new deadline is in the past', async () => {
+      mockRepo.findOne.mockResolvedValue({ ...baseOpportunity });
+      mockAppRepo.count.mockResolvedValue(0);
+
+      await expect(
+        service.update(
+          'uuid-1',
+          { title: 'x', deadline: '2024-01-01' },
+          'user-1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('remove', () => {
     it('removes an opportunity when the user is the publisher', async () => {
       mockRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.find.mockResolvedValue([]);
+      mockRepo.remove.mockResolvedValue(undefined);
+
+      await service.remove('uuid-1', 'user-1');
+
+      expect(mockRepo.remove).toHaveBeenCalledWith(baseOpportunity);
+    });
+
+    it('notifies applicants before removing an opportunity', async () => {
+      const applicantA = { user: { id: 'u-2' } };
+      const applicantB = { user: { id: 'u-3' } };
+      mockRepo.findOne.mockResolvedValue(baseOpportunity);
+      mockAppRepo.find.mockResolvedValue([applicantA, applicantB]);
       mockRepo.remove.mockResolvedValue(undefined);
 
       await service.remove('uuid-1', 'user-1');
@@ -316,6 +393,58 @@ describe('OpportunitiesService', () => {
 
       expect(mockQbChain.skip).toHaveBeenCalledWith(10);
       expect(mockQbChain.take).toHaveBeenCalledWith(10);
+    });
+
+    it('uses default sort when no sort params are provided', async () => {
+      mockQbChain.getManyAndCount.mockResolvedValue([[baseOpportunity], 1]);
+
+      await service.findByPublisher('user-1', {});
+
+      expect(mockQbChain.orderBy).toHaveBeenCalledWith(
+        'opportunity.createdAt',
+        'DESC',
+      );
+    });
+  });
+
+  describe('clone', () => {
+    it('clones an opportunity for the same publisher', async () => {
+      mockRepo.findOne.mockResolvedValue(baseOpportunity);
+      const cloned = {
+        ...baseOpportunity,
+        id: 'uuid-2',
+        title: 'Tutoría de Cálculo (copia)',
+      };
+      mockRepo.create.mockReturnValue(cloned);
+      mockRepo.save.mockResolvedValue(cloned);
+
+      const result = await service.clone('uuid-1', 'user-1', UserRole.DOCENTE);
+
+      expect(mockRepo.create).toHaveBeenCalledWith({
+        title: 'Tutoría de Cálculo (copia)',
+        description: baseOpportunity.description,
+        type: baseOpportunity.type,
+        requirements: baseOpportunity.requirements,
+        formFields: baseOpportunity.formFields,
+        publisher: { id: 'user-1' },
+      });
+      expect(result).toEqual(cloned);
+    });
+
+    it('throws ForbiddenException when cloning an opportunity from another publisher', async () => {
+      mockRepo.findOne.mockResolvedValue(baseOpportunity);
+
+      await expect(
+        service.clone('uuid-1', 'other-user', UserRole.DOCENTE),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws NotFoundException when cloning a non-existent opportunity', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.clone('no-existe', 'user-1', UserRole.DOCENTE),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });
