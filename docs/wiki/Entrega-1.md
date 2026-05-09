@@ -180,23 +180,3 @@ Ver resultados detallados en [Proyecto - Evidencias](Proyecto---Evidencias).
 
 ---
 
-## Problemas encontrados y soluciones
-
-| Problema | Impacto | Solución aplicada |
-|---|---|---|
-| `setupFilesAfterFramework` no es una clave válida en Jest — debía ser `setupFilesAfterEnv` | `@testing-library/jest-dom` no se cargaba; matchers como `toBeInTheDocument()` fallaban | Corregida la clave en el bloque `jest` de `package.json` |
-| `import.meta.env` en `api/client.ts` rompe Jest (CommonJS no soporta `import.meta`) | Todos los tests del API fallaban al intentar importar el módulo | Creado `src/api/__mocks__/client.ts`; Jest usa el mock automáticamente cuando se llama `jest.mock('./client')` |
-| `TextEncoder is not defined` al usar `react-router-dom` en tests con jsdom | `OpportunityCard.test.tsx` no podía correr porque react-router-dom usa `TextEncoder` internamente | Agregado polyfill `TextEncoder`/`TextDecoder` desde `util` de Node en `setupTests.ts` |
-| `ts-jest` fallaba con TypeScript 6 por `rootDir` no definido y `baseUrl` deprecado | Los 3 spec files del backend no compilaban | Agregado `rootDir: "./src"` e `ignoreDeprecations: "6.0"` en `tsconfig.json` del backend |
-| `DATABASE_URL` interna de Railway no funciona en desarrollo local | El backend no podía conectarse a la base de datos al correr localmente | Usar `DATABASE_PUBLIC_URL` (junction.proxy.rlwy.net) para desarrollo local; `DATABASE_URL` solo funciona dentro de la red de Railway |
-
----
-
-## Supuestos y dependencias específicas de E1
-
-- El equipo tiene 4 integrantes (el curso indica 3) — acordado con el docente.
-- En Entrega 1, cualquier usuario puede crear/editar/eliminar oportunidades sin control por roles. El RBAC se implementa en Entrega 2.
-- Se usa `synchronize: true` en TypeORM en desarrollo para que el esquema se cree automáticamente. En producción (Railway) se usará migrations.
-- La variable `VITE_API_URL` del frontend debe apuntar a la URL del backend de Railway cuando se despliega en Vercel.
-- La variable `FRONTEND_URL` del backend debe incluir la URL de Vercel para que CORS permita las peticiones.
-- Los tests E2E con Playwright están planificados para Entrega 3; en esta entrega solo se usan tests unitarios con Jest.
