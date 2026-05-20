@@ -15,26 +15,25 @@ CampusLink is a university community platform where students, teachers, and inst
 # From root
 npm run dev:frontend        # Vite dev server → http://localhost:5173
 npm run dev:backend         # NestJS watch mode → http://localhost:3000
-
-# Or within each workspace
-cd apps/backend && npm run start:dev
-cd apps/frontend && npm run dev
 ```
+
+`start:dev` runs a `prestart:dev` hook that kills any process on port 3000 before starting.
 
 ### Testing
 ```bash
 # Backend unit tests (*.spec.ts)
 cd apps/backend && npm test
-cd apps/backend && npm run test:watch
 cd apps/backend && npm run test:cov
+
+# Run a single backend test file
+cd apps/backend && npx jest src/auth/auth.service.spec.ts
 
 # Frontend component tests (*.test.tsx)
 cd apps/frontend && npm test
-cd apps/frontend && npm run test:watch
+cd apps/frontend && npm run test:coverage
 
-# From root (workspace flag)
-npm run test --workspace=apps/backend
-npm run test --workspace=apps/frontend
+# Run a single frontend test file
+cd apps/frontend && npx jest src/components/OpportunityCard.test.tsx
 ```
 
 **Do NOT add or run Playwright tests** — E2E testing is reserved for a future deliverable. Do not modify `playwright.config.ts`.
@@ -58,32 +57,41 @@ Each domain is a self-contained NestJS module following a strict layered pattern
 Controller (HTTP boundary) → Service (business logic) → TypeORM Repository (data access)
 ```
 
-Modules: `auth/`, `opportunities/`, `applications/`
+Modules:
+- `auth/` — JWT login/register, `JwtAuthGuard`, `RolesGuard`, `@Roles()` decorator
+- `opportunities/` — CRUD + publisher history + deadline transitions
+- `applications/` — Application state machine, finalization, feedback
+- `admin/` — Admin-only endpoints: suspend/reactivate users, block/unblock opportunities. Run `seed-admin.ts` to create the initial admin user from env vars.
+- `notifications/` — Notification system
+- `common/util/text.ts` — `normalizeSearch()` strips accents for accent-insensitive ILIKE queries
 
-- **DTOs** in `dto/` always use `class-validator` decorators — validation happens only at the HTTP boundary (global `ValidationPipe` with `whitelist: true, transform: true`)
+Key conventions:
+- **DTOs** in `dto/` always use `class-validator` decorators — validation at HTTP boundary only (global `ValidationPipe` with `whitelist: true, transform: true`)
 - **Entities** use TypeORM decorators; `synchronize: true` is enabled in development/test — do not set it to `false` locally
-- **Guards**: `JwtAuthGuard` protects routes requiring authentication; the JWT strategy reads `Authorization: Bearer <token>`
+- **Guards**: apply `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(UserRole.ADMIN)` to protect routes. `RolesGuard` also rejects suspended users regardless of role.
 - **Exceptions**: use NestJS built-ins (`NotFoundException`, `BadRequestException`, etc.) — no custom error classes
+- **Lazy transitions**: `applyDeadlineTransitions()` in `opportunities.transitions.ts` moves opportunities from `DISPONIBLE` → `EN_EVALUACION` when their deadline passes; it is called on each read, not on a cron.
 - Global API prefix is `/api`
 
 ### Frontend (React + Vite)
 
-- All HTTP calls must go through `src/api/` (domain files: `auth.ts`, `opportunities.ts`, `applications.ts`) — never use `fetch`/`axios` inline in components
-- `src/api/__mocks__/client.ts` mocks the Axios instance in tests
-- Pages are organized by domain under `src/pages/` and registered in `App.tsx` via React Router v7
-- Shared TypeScript interfaces live in `src/types/` — keep frontend types aligned with backend entities
+- All HTTP calls must go through `src/api/` — domain files: `auth.ts`, `opportunities.ts`, `applications.ts`, `admin.ts`, `notifications.ts`. Never use `fetch`/`axios` inline in components.
+- `src/api/__mocks__/client.ts` mocks the Axios instance in tests; `src/api/client.ts` adds a response interceptor that redirects on 401/403.
+- Pages are organized by domain under `src/pages/` (`auth/`, `opportunities/`, `admin/`, `profile/`, `notifications/`) and registered in `App.tsx` via React Router v7.
+- Shared TypeScript interfaces live in `src/types/` — keep frontend types aligned with backend entities.
+- CSS modules are mocked with `identity-obj-proxy` in tests.
 
 ### Data Model
 
 | Entity | Key fields | Notes |
 |--------|-----------|-------|
-| `User` | UUID, email (unique), name, password (excluded from SELECT), role enum | Roles: `ESTUDIANTE`, `DOCENTE`, `INSTITUCION`, `ADMIN` |
-| `Opportunity` | UUID, title, description, type enum, requirements, deadline, isActive, publisher (FK→User) | Types: `TUTORIA`, `GRUPO_ESTUDIO`, `AYUDANTIA`, `TRABAJO`, `PRACTICA`, `VOLUNTARIADO`, `INVESTIGACION`, `OTRO` |
-| `Application` | UUID, user (FK), opportunity (FK), status enum | Unique constraint on (user, opportunity). Status: `POSTULADO`, `EN_REVISION`, `ACEPTADO`, `RECHAZADO` |
+| `User` | UUID, email (unique), name, password (excluded from SELECT), role enum, suspended (bool) | Roles: `ESTUDIANTE`, `DOCENTE`, `INSTITUCION`, `ADMIN`. `ADMIN` cannot self-register. |
+| `Opportunity` | UUID, title, description, type enum, requirements, deadline, status enum, publisher (FK→User) | Types: `TUTORIA`, `GRUPO_ESTUDIO`, `AYUDANTIA`, `TRABAJO`, `PRACTICA`, `VOLUNTARIADO`, `INVESTIGACION`, `OTRO`. Status: `DISPONIBLE`, `EN_EVALUACION`, `FINALIZADO`, `DESIERTA`, `BLOQUEADA` |
+| `Application` | UUID, user (FK), opportunity (FK), status enum, feedback | Unique constraint on (user, opportunity). Status: `POSTULADO`, `EN_REVISION`, `ACEPTADO`, `RECHAZADO`, `CANCELADO`, `NO_SELECCIONADO` |
 
 ### Environment Variables
 
-Backend (`.env` in `apps/backend/`):
+Backend (`.env` in `apps/backend/`, see `.env.example`):
 ```
 DATABASE_URL=postgresql://user:pass@host:port/db
 JWT_SECRET=<long_random_string>
@@ -97,11 +105,13 @@ Frontend (`.env.local` in `apps/frontend/`, optional):
 VITE_API_URL=http://localhost:3000/api
 ```
 
+CI uses `postgresql://postgres:postgres@localhost:5432/campuslink_test` via a GitHub Actions PostgreSQL 15 service container.
+
 ## Key Constraints
 
 - **TypeScript strict** — never use `any` without explicit justification
 - **No new libraries** without proposing alternatives and justifying the choice
 - **No Playwright** — tests use Jest only (backend: `ts-jest`, frontend: `babel-jest` + `jsdom`)
 - **No production `synchronize: true`** — TypeORM migrations required for production deployments
-- RBAC enforcement is in place (from Entrega 2); do not bypass role checks when editing auth-related code
+- RBAC enforcement is active; do not bypass role checks. `RolesGuard` must be applied alongside `JwtAuthGuard` on any role-restricted route.
 - Backend tests are co-located (`.spec.ts` alongside source); frontend tests use `.test.tsx` suffix

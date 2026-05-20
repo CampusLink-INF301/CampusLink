@@ -73,3 +73,18 @@ jobs:
       - name: Run frontend unit tests
         working-directory: apps/frontend
         run: npm test -- --passWithNoTests
+
+  notify:
+    name: Notificar Discord
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend-build, jest-tests]
+    if: always()
+    steps:
+      - name: Resultado del pipeline
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ contains(needs.*.result, 'failure') && 'failure' || contains(needs.*.result, 'cancelled') && 'cancelled' || 'success' }}
+          title: "CampusLink CI"
+          description: "Rama `${{ github.ref_name }}` · Ejecutado por **${{ github.actor }}**"
+          username: "GitHub Actions"

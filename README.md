@@ -1,5 +1,7 @@
 # CampusLink — Red de Oportunidades Universitarias
 
+[![CI](https://github.com/CampusLink-INF301/CampusLink/actions/workflows/ci.yml/badge.svg)](https://github.com/CampusLink-INF301/CampusLink/actions/workflows/ci.yml)
+
 CampusLink es una plataforma web para la comunidad universitaria donde estudiantes, docentes e instituciones pueden publicar, descubrir y gestionar oportunidades (tutorías, grupos de estudio, trabajos part-time, prácticas, voluntariados, investigación y más) en un solo lugar.
 
 ---
