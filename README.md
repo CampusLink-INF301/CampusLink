@@ -40,7 +40,9 @@ CampusLink es una plataforma web para la comunidad universitaria donde estudiant
 | Base de datos | PostgreSQL |
 | Hosting frontend | Vercel |
 | Hosting backend/DB | Railway |
-| Testing E1 | Jest (unitarios) |
+| Testing | Jest (unitarios) |
+| CI/CD | GitHub Actions |
+| Notificaciones CI | Discord (webhook) |
 | Control de versiones | Git + GitFlow |
 | Gestión del proyecto | JIRA (Kanban) |
 | Comunicación | Discord |
@@ -159,6 +161,25 @@ El frontend queda disponible en `http://localhost:5173`.
 
 ---
 
+## Sistema CI/CD
+
+El pipeline de CI/CD corre en **GitHub Actions** y se activa automáticamente en cada push a `develop`/`main` y en PRs a `main`.
+
+**Etapas del pipeline:**
+
+| Job | Qué hace |
+|---|---|
+| `backend-build` | Type-check del backend con TypeScript |
+| `frontend-build` | Type-check + build de producción del frontend |
+| `jest-tests` | Ejecuta los tests unitarios (Jest) contra PostgreSQL 15 |
+| `notify` | Envía el resultado al canal **#pruebas** de Discord |
+
+El estado queda asociado a cada commit directamente en GitHub. Si los tests fallan, el badge del README cambia a rojo y el equipo recibe una notificación en Discord.
+
+[![CI](https://github.com/CampusLink-INF301/CampusLink/actions/workflows/ci.yml/badge.svg)](https://github.com/CampusLink-INF301/CampusLink/actions/workflows/ci.yml)
+
+---
+
 ## Cómo ejecutar los tests (Jest)
 
 Los tests unitarios no requieren que el backend o la base de datos estén corriendo.
@@ -179,14 +200,15 @@ npm run test:coverage
 **Resultado esperado:**
 
 ```
-Backend:  16/16 tests pasando
-Frontend: 21/21 tests pasando
+Backend:  89 tests pasando (10 suites) — cobertura 73.5%
+Frontend: 20 suites pasando
 ```
 
 Los tests cubren:
-- `AuthService`: registro, login, manejo de errores
-- `OpportunitiesService`: CRUD completo con filtros y búsqueda
-- `OpportunityCard`: render, props, truncado, botón eliminar
+- `AuthService` / `AuthController`: registro, login, perfil, JWT strategy, RolesGuard
+- `OpportunitiesService` / `OpportunitiesController`: CRUD completo, filtros, paginación, clonar
+- `ApplicationsController`: postulación, cancelación, mis postulaciones, vista del docente
+- `OpportunityCard`: render, props, truncado, botón eliminar, botón clonar
 - `SearchBar`: búsqueda por texto, filtro por tipo, limpiar
 - `opportunitiesApi`: todas las llamadas HTTP (axios mockeado)
 
