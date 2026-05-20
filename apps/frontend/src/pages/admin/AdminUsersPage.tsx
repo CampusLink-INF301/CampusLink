@@ -121,7 +121,7 @@ export function AdminUsersPage() {
           <button
             className="btn btn-secondary"
             disabled={page <= 1}
-            onClick={() => { setPage((p) => p - 1); void load(page - 1, search); }}
+            onClick={() => { const prev = page - 1; setPage(prev); void load(prev, search); }}
             data-testid="admin-users-prev"
           >
             ← Anterior
@@ -130,7 +130,7 @@ export function AdminUsersPage() {
           <button
             className="btn btn-secondary"
             disabled={page >= totalPages}
-            onClick={() => { setPage((p) => p + 1); void load(page + 1, search); }}
+            onClick={() => { const next = page + 1; setPage(next); void load(next, search); }}
             data-testid="admin-users-next"
           >
             Siguiente →
