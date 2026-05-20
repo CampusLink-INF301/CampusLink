@@ -32,8 +32,9 @@ export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar
         deadline: deadline || undefined,
         formFields: formFields.length > 0 ? formFields : undefined,
       });
-    } catch {
-      setError('Ocurrió un error. Intenta de nuevo.');
+    } catch (err: unknown) {
+      const apiMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(apiMsg ?? 'Ocurrió un error. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
