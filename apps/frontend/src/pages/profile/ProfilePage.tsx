@@ -34,6 +34,7 @@ export function ProfilePage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [applicationsError, setApplicationsError] = useState('');
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<OpportunityType | ''>('');
@@ -60,6 +61,7 @@ export function ProfilePage() {
   }, [navigate]);
 
   useEffect(() => {
+    setApplicationsError('');
     applicationsApi
       .getMine({
         search: search || undefined,
@@ -67,7 +69,7 @@ export function ProfilePage() {
         status: filterStatus || undefined,
       })
       .then(setApplications)
-      .catch(() => {});
+      .catch(() => setApplicationsError('No se pudieron cargar las postulaciones.'));
   }, [search, filterType, filterStatus]);
 
   const handleCancelApplication = async (id: string) => {
@@ -128,14 +130,20 @@ export function ProfilePage() {
         </select>
       </div>
 
-      {applications.length === 0 ? (
+      {applicationsError && (
+        <p className="form-error" role="alert" data-testid="applications-error">{applicationsError}</p>
+      )}
+
+      {!applicationsError && applications.length === 0 && (
         <div className="empty-state" data-testid="no-applications">
           <p>Aún no has postulado a ninguna oportunidad.</p>
           <p style={{ fontSize: 13, marginTop: 6 }}>
             <Link to="/opportunities">Ver oportunidades disponibles</Link>
           </p>
         </div>
-      ) : (
+      )}
+
+      {!applicationsError && applications.length > 0 && (
         <div data-testid="applications-list">
           {applications.map((app) => {
             const canCancel =
