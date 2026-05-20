@@ -39,4 +39,7 @@ export const opportunitiesApi = {
 
   remove: (id: string) =>
     client.delete(`/opportunities/${id}`),
+
+  clone: (id: string) =>
+    client.post<Opportunity>(`/opportunities/${id}/clone`).then((r) => r.data),
 };

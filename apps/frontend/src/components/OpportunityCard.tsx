@@ -5,10 +5,11 @@ import { OPPORTUNITY_TYPE_LABELS } from '../types/opportunity';
 interface Props {
   opportunity: Opportunity;
   onDelete?: (id: string) => void;
+  onClone?: (id: string) => void;
   currentUserId?: string;
 }
 
-export function OpportunityCard({ opportunity, onDelete, currentUserId }: Props) {
+export function OpportunityCard({ opportunity, onDelete, onClone, currentUserId }: Props) {
   const deadline = opportunity.deadline
     ? new Date(opportunity.deadline).toLocaleDateString('es-CL')
     : null;
@@ -41,6 +42,15 @@ export function OpportunityCard({ opportunity, onDelete, currentUserId }: Props)
                 Editar
               </button>
             </Link>
+            {onClone && (
+              <button
+                className="btn btn-secondary btn-sm"
+                aria-label="Clonar oportunidad"
+                onClick={() => onClone(opportunity.id)}
+              >
+                Clonar
+              </button>
+            )}
             {onDelete && (
               <button
                 className="btn btn-danger btn-sm"

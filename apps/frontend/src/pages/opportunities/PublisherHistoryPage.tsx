@@ -80,6 +80,11 @@ export function PublisherHistoryPage() {
     void load(page);
   };
 
+  const handleClone = async (id: string) => {
+    const cloned = await opportunitiesApi.clone(id);
+    navigate(`/opportunities/${cloned.id}/edit`);
+  };
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -151,6 +156,7 @@ export function PublisherHistoryPage() {
             opportunity={o}
             currentUserId={currentUser?.id}
             onDelete={handleDelete}
+            onClone={handleClone}
           />
           {[OpportunityStatus.EN_EVALUACION, OpportunityStatus.FINALIZADO, OpportunityStatus.DESIERTA].includes(o.status) && (
             <div style={{ marginTop: -8, marginBottom: 12, paddingLeft: 4 }}>
