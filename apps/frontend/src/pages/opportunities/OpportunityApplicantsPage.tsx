@@ -41,6 +41,7 @@ export function OpportunityApplicantsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
 
   useEffect(() => {
     if (!id) return;
@@ -87,7 +88,13 @@ export function OpportunityApplicantsPage() {
 
   const handleSaveFeedback = async (appId: string) => {
     const feedback = feedbacks[appId] ?? '';
-    await applicationsApi.setFeedback(appId, feedback);
+    setFeedbackStatus((prev) => ({ ...prev, [appId]: 'saving' }));
+    try {
+      await applicationsApi.setFeedback(appId, feedback);
+      setFeedbackStatus((prev) => ({ ...prev, [appId]: 'saved' }));
+    } catch {
+      setFeedbackStatus((prev) => ({ ...prev, [appId]: 'error' }));
+    }
   };
 
   if (loading) return <p className="loading-text">Cargando postulantes…</p>;
@@ -146,10 +153,21 @@ export function OpportunityApplicantsPage() {
                 className="btn btn-secondary btn-sm"
                 style={{ marginTop: 4 }}
                 onClick={() => void handleSaveFeedback(app.id)}
+                disabled={feedbackStatus[app.id] === 'saving'}
                 data-testid={`btn-save-feedback-${app.id}`}
               >
-                Guardar feedback
+                {feedbackStatus[app.id] === 'saving' ? 'Guardando…' : 'Guardar feedback'}
               </button>
+              {feedbackStatus[app.id] === 'saved' && (
+                <span className="form-success" role="status" data-testid={`feedback-saved-${app.id}`}>
+                  {' '}Feedback guardado.
+                </span>
+              )}
+              {feedbackStatus[app.id] === 'error' && (
+                <span className="form-error" role="alert" data-testid={`feedback-error-${app.id}`}>
+                  {' '}Error al guardar el feedback.
+                </span>
+              )}
             </div>
           )}
         </div>
