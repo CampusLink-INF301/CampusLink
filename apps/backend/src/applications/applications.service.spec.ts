@@ -34,7 +34,6 @@ const mockAppRepo = {
 };
 
 const mockOpportunityRepo = {
-  findOneBy: jest.fn(),
   findOne: jest.fn(),
 };
 
@@ -126,7 +125,7 @@ describe('ApplicationsService', () => {
 
   describe('apply', () => {
     it('creates a new application', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(null);
       mockAppRepo.create.mockReturnValue(baseApplication);
       mockAppRepo.save.mockResolvedValue(baseApplication);
@@ -142,7 +141,7 @@ describe('ApplicationsService', () => {
     });
 
     it('throws NotFoundException when opportunity does not exist', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue(null);
+      mockOpportunityRepo.findOne.mockResolvedValue(null);
 
       await expect(
         service.apply('user-2', { opportunityId: 'no-existe' }),
@@ -150,7 +149,7 @@ describe('ApplicationsService', () => {
     });
 
     it('throws BadRequestException when opportunity is not DISPONIBLE', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue({
+      mockOpportunityRepo.findOne.mockResolvedValue({
         ...baseOpportunity,
         status: OpportunityStatus.EN_EVALUACION,
       });
@@ -161,7 +160,7 @@ describe('ApplicationsService', () => {
     });
 
     it('throws BadRequestException when deadline has passed', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue({
+      mockOpportunityRepo.findOne.mockResolvedValue({
         ...baseOpportunity,
         deadline: pastDeadline,
       });
@@ -172,7 +171,7 @@ describe('ApplicationsService', () => {
     });
 
     it('throws ConflictException when already applied (active)', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(baseApplication);
 
       await expect(
@@ -185,7 +184,7 @@ describe('ApplicationsService', () => {
         ...baseApplication,
         status: ApplicationStatus.CANCELADO,
       };
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(cancelled);
       mockAppRepo.save.mockResolvedValue({
         ...cancelled,
@@ -458,7 +457,7 @@ describe('ApplicationsService', () => {
   describe('state machine — postular → cancelar → re-postular', () => {
     it('full lifecycle: apply, cancel, reactivate', async () => {
       // Step 1: apply
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(null);
       mockAppRepo.create.mockReturnValue(baseApplication);
       mockAppRepo.save.mockResolvedValue(baseApplication);
@@ -481,7 +480,7 @@ describe('ApplicationsService', () => {
         ...baseApplication,
         status: ApplicationStatus.CANCELADO,
       };
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(cancelledApp);
       mockAppRepo.save.mockResolvedValue({
         ...cancelledApp,

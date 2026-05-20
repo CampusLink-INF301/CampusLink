@@ -12,6 +12,7 @@ export enum NotificationType {
   OPPORTUNITY_DELETED = 'opportunity_deleted',
   APPLICATION_RESULT = 'application_result',
   APPLICATION_FEEDBACK = 'application_feedback',
+  APPLICATION_SUBMITTED = 'application_submitted',
 }
 
 @Entity('notifications')

@@ -35,8 +35,9 @@ export class ApplicationsService {
   ) {}
 
   async apply(userId: string, dto: CreateApplicationDto): Promise<Application> {
-    const opportunity = await this.opportunityRepo.findOneBy({
-      id: dto.opportunityId,
+    const opportunity = await this.opportunityRepo.findOne({
+      where: { id: dto.opportunityId },
+      relations: ['publisher'],
     });
     if (!opportunity)
       throw new NotFoundException(`Opportunity ${dto.opportunityId} not found`);
@@ -60,7 +61,16 @@ export class ApplicationsService {
       if (existing.status === ApplicationStatus.CANCELADO) {
         existing.status = ApplicationStatus.POSTULADO;
         existing.formResponses = dto.formResponses ?? null;
-        return this.repo.save(existing);
+        const saved = await this.repo.save(existing);
+        if (opportunity.publisher) {
+          await this.notificationsService.create(
+            opportunity.publisher.id,
+            NotificationType.APPLICATION_SUBMITTED,
+            `Nuevo postulante en "${opportunity.title}".`,
+            opportunity.id,
+          );
+        }
+        return saved;
       }
       throw new ConflictException('Ya has postulado a esta oportunidad');
     }
@@ -71,7 +81,16 @@ export class ApplicationsService {
         opportunity: { id: dto.opportunityId } as Opportunity,
         formResponses: dto.formResponses ?? null,
       });
-      return await this.repo.save(application);
+      const saved = await this.repo.save(application);
+      if (opportunity.publisher) {
+        await this.notificationsService.create(
+          opportunity.publisher.id,
+          NotificationType.APPLICATION_SUBMITTED,
+          `Nuevo postulante en "${opportunity.title}".`,
+          opportunity.id,
+        );
+      }
+      return saved;
     } catch (err) {
       if (
         err instanceof QueryFailedError &&
