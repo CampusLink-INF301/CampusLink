@@ -10,7 +10,9 @@ export function Navbar() {
     ? JSON.parse(storedUser)
     : null;
   const isPublisher =
-    currentUser?.role === 'docente' || currentUser?.role === 'institucion';
+    currentUser?.role === 'docente' ||
+    currentUser?.role === 'institucion' ||
+    currentUser?.role === 'estudiante';
   const isAdmin = currentUser?.role === 'admin';
 
   const [unreadCount, setUnreadCount] = useState(0);
