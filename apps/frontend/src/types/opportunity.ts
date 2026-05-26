@@ -33,7 +33,7 @@ export const OPPORTUNITY_STATUS_LABELS: Record<OpportunityStatus, string> = {
   [OpportunityStatus.EN_EVALUACION]: 'En evaluación',
   [OpportunityStatus.FINALIZADO]: 'Finalizado',
   [OpportunityStatus.DESIERTA]: 'Desierta',
-  [OpportunityStatus.BLOQUEADA]: 'En revisión',
+  [OpportunityStatus.BLOQUEADA]: 'Bloqueada',
 };
 
 export type FormFieldType = 'text_short' | 'text_long' | 'select_single' | 'select_multiple' | 'number' | 'date';

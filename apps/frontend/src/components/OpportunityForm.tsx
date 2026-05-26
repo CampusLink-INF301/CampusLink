@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { OpportunityType, OPPORTUNITY_TYPE_LABELS } from '../types/opportunity';
+import {
+  OpportunityType,
+  OPPORTUNITY_TYPE_LABELS,
+  ALLOWED_TYPES_BY_ROLE,
+} from '../types/opportunity';
 import type { CreateOpportunityPayload, FormField } from '../types/opportunity';
 import { FormFieldBuilder } from './FormFieldBuilder';
 
@@ -9,10 +13,25 @@ interface Props {
   submitLabel?: string;
 }
 
+function getCurrentUserRole(): string | null {
+  const stored = localStorage.getItem('user');
+  if (!stored) return null;
+  try {
+    return (JSON.parse(stored) as { role?: string }).role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar' }: Props) {
+  const role = getCurrentUserRole();
+  const allowedTypes =
+    (role && ALLOWED_TYPES_BY_ROLE[role]) ?? Object.values(OpportunityType);
+  const defaultType = initial.type ?? allowedTypes[0] ?? OpportunityType.OTRO;
+
   const [title, setTitle]               = useState(initial.title ?? '');
   const [description, setDescription]   = useState(initial.description ?? '');
-  const [type, setType]                 = useState<OpportunityType>(initial.type ?? OpportunityType.OTRO);
+  const [type, setType]                 = useState<OpportunityType>(defaultType);
   const [requirements, setRequirements] = useState(initial.requirements ?? '');
   const [deadline, setDeadline]         = useState(initial.deadline?.slice(0, 10) ?? '');
   const [formFields, setFormFields]     = useState<FormField[]>(initial.formFields ?? []);
@@ -65,7 +84,7 @@ export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar
           onChange={(e) => setType(e.target.value as OpportunityType)}
           required
         >
-          {Object.values(OpportunityType).map((t) => (
+          {allowedTypes.map((t) => (
             <option key={t} value={t}>{OPPORTUNITY_TYPE_LABELS[t]}</option>
           ))}
         </select>

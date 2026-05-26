@@ -35,6 +35,8 @@ playwright/.cache/
 
 # Claude Code (AI assistant local config — machine-specific)
 .claude/
+.agents/
+skills-lock.json
 
 # Editor
 .vscode/
