@@ -25,9 +25,9 @@ function getCurrentUserRole(): string | null {
 
 export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar' }: Props) {
   const role = getCurrentUserRole();
-  const allowedTypes =
-    (role && ALLOWED_TYPES_BY_ROLE[role]) ?? Object.values(OpportunityType);
-  const defaultType = initial.type ?? allowedTypes[0] ?? OpportunityType.OTRO;
+  const allowedTypes: OpportunityType[] =
+    (role ? ALLOWED_TYPES_BY_ROLE[role] : undefined) ?? Object.values(OpportunityType);
+  const defaultType: OpportunityType = initial.type ?? allowedTypes[0] ?? OpportunityType.OTRO;
 
   const [title, setTitle]               = useState(initial.title ?? '');
   const [description, setDescription]   = useState(initial.description ?? '');
@@ -84,7 +84,7 @@ export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar
           onChange={(e) => setType(e.target.value as OpportunityType)}
           required
         >
-          {allowedTypes.map((t) => (
+          {allowedTypes.map((t: OpportunityType) => (
             <option key={t} value={t}>{OPPORTUNITY_TYPE_LABELS[t]}</option>
           ))}
         </select>
