@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Opportunity } from '../types/opportunity';
 import { OPPORTUNITY_TYPE_LABELS, OPPORTUNITY_STATUS_LABELS, OpportunityStatus } from '../types/opportunity';
@@ -28,9 +29,21 @@ interface Props {
   onDelete?: (id: string) => void;
   onClone?: (id: string) => void;
   currentUserId?: string;
+  isSaved?: boolean;
+  onToggleSave?: (id: string, currentlySaved: boolean) => Promise<void>;
 }
 
-export function OpportunityCard({ opportunity, onDelete, onClone, currentUserId }: Props) {
+export function OpportunityCard({
+  opportunity,
+  onDelete,
+  onClone,
+  currentUserId,
+  isSaved = false,
+  onToggleSave,
+}: Props) {
+  const [saved, setSaved] = useState(isSaved);
+  const [savingInProgress, setSavingInProgress] = useState(false);
+
   const deadline = opportunity.deadline
     ? new Date(opportunity.deadline).toLocaleDateString('es-CL')
     : null;
@@ -38,12 +51,27 @@ export function OpportunityCard({ opportunity, onDelete, onClone, currentUserId 
   const isOwner = !!(currentUserId && opportunity.publisher?.id === currentUserId);
   const isDisponible = opportunity.status === OpportunityStatus.DISPONIBLE;
 
+  const handleToggleSave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (savingInProgress || !onToggleSave) return;
+    setSavingInProgress(true);
+    const next = !saved;
+    setSaved(next);
+    try {
+      await onToggleSave(opportunity.id, saved);
+    } catch {
+      setSaved(!next);
+    } finally {
+      setSavingInProgress(false);
+    }
+  };
+
   return (
     <article className="card" data-testid="opportunity-card">
       <div className="card-row">
         <div className="card-content">
 
-          {/* Header: tipo + estado + fecha */}
+          {/* Header: tipo + estado + fecha + guardar */}
           <div className="card-header-row">
             <span className={`badge badge-${opportunity.type}`}>
               {OPPORTUNITY_TYPE_LABELS[opportunity.type]}
@@ -52,6 +80,18 @@ export function OpportunityCard({ opportunity, onDelete, onClone, currentUserId 
               {OPPORTUNITY_STATUS_LABELS[opportunity.status]}
             </span>
             <span className="card-date">{relativeDate(opportunity.createdAt)}</span>
+            {onToggleSave && !isOwner && (
+              <button
+                className={`btn-save${saved ? ' btn-save--active' : ''}`}
+                onClick={handleToggleSave}
+                aria-label={saved ? 'Quitar de guardados' : 'Guardar oportunidad'}
+                title={saved ? 'Quitar de guardados' : 'Guardar'}
+              >
+                <svg width="14" height="14" viewBox="0 0 20 20" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={saved ? '0' : '1.5'} aria-hidden="true">
+                  <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Título */}

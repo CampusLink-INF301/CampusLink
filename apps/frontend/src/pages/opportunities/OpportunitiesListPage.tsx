@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { opportunitiesApi } from '../../api/opportunities';
+import { savedApi } from '../../api/saved';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import { SearchBar } from '../../components/SearchBar';
 import type { Opportunity, OpportunityType } from '../../types/opportunity';
@@ -69,7 +70,27 @@ export function OpportunitiesListPage() {
     return () => observer.disconnect();
   }, [loading, hasMore, offset, loadPage]);
 
+  const storedUser = localStorage.getItem('user');
+  const currentUser: { id: string; role: string } | null = storedUser ? JSON.parse(storedUser) : null;
   const isLoggedIn = !!localStorage.getItem('token');
+  const isStudent = currentUser?.role === 'estudiante';
+
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!isStudent) return;
+    savedApi.getIds().then((ids) => setSavedIds(new Set(ids))).catch(() => {});
+  }, [isStudent]);
+
+  const handleToggleSave = async (id: string, currentlySaved: boolean) => {
+    if (currentlySaved) {
+      await savedApi.unsave(id);
+      setSavedIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    } else {
+      await savedApi.save(id);
+      setSavedIds((prev) => new Set([...prev, id]));
+    }
+  };
 
   return (
     <main className="page">
@@ -128,7 +149,13 @@ export function OpportunitiesListPage() {
       )}
 
       {items.map((o) => (
-        <OpportunityCard key={o.id} opportunity={o} />
+        <OpportunityCard
+          key={o.id}
+          opportunity={o}
+          currentUserId={currentUser?.id}
+          isSaved={savedIds.has(o.id)}
+          onToggleSave={isStudent ? handleToggleSave : undefined}
+        />
       ))}
 
       {loading && <p className="loading-text">Cargando oportunidades…</p>}
