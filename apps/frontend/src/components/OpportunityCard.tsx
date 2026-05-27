@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Opportunity } from '../types/opportunity';
-import { OPPORTUNITY_TYPE_LABELS } from '../types/opportunity';
+import { OPPORTUNITY_TYPE_LABELS, OPPORTUNITY_STATUS_LABELS, OpportunityStatus } from '../types/opportunity';
 
 const ROLE_LABELS: Record<string, string> = {
   estudiante: 'Estudiante',
@@ -8,6 +8,20 @@ const ROLE_LABELS: Record<string, string> = {
   institucion: 'Institución',
   admin: 'Administrador',
 };
+
+function relativeDate(dateStr: string): string {
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
+  if (days === 0) return 'hoy';
+  if (days === 1) return 'ayer';
+  if (days < 7) return `hace ${days} días`;
+  if (days < 30) return `hace ${Math.floor(days / 7)} sem.`;
+  if (days < 365) {
+    const m = Math.floor(days / 30);
+    return `hace ${m} mes${m > 1 ? 'es' : ''}`;
+  }
+  const y = Math.floor(days / 365);
+  return `hace ${y} año${y > 1 ? 's' : ''}`;
+}
 
 interface Props {
   opportunity: Opportunity;
@@ -22,66 +36,92 @@ export function OpportunityCard({ opportunity, onDelete, onClone, currentUserId 
     : null;
 
   const isOwner = !!(currentUserId && opportunity.publisher?.id === currentUserId);
+  const isDisponible = opportunity.status === OpportunityStatus.DISPONIBLE;
 
   return (
     <article className="card" data-testid="opportunity-card">
       <div className="card-row">
         <div className="card-content">
-          <span className={`badge badge-${opportunity.type}`}>
-            {OPPORTUNITY_TYPE_LABELS[opportunity.type]}
-          </span>
+
+          {/* Header: tipo + estado + fecha */}
+          <div className="card-header-row">
+            <span className={`badge badge-${opportunity.type}`}>
+              {OPPORTUNITY_TYPE_LABELS[opportunity.type]}
+            </span>
+            <span className={`badge badge-status-${opportunity.status}`}>
+              {OPPORTUNITY_STATUS_LABELS[opportunity.status]}
+            </span>
+            <span className="card-date">{relativeDate(opportunity.createdAt)}</span>
+          </div>
+
+          {/* Título */}
           <Link to={`/opportunities/${opportunity.id}`} className="card-title">
             {opportunity.title}
           </Link>
+
+          {/* Descripción */}
           <p className="card-desc">
             {opportunity.description.length > 120
               ? `${opportunity.description.slice(0, 120)}…`
               : opportunity.description}
           </p>
-          <p className="card-meta">
-            {opportunity.publisher && (
-              <>
-                <span>
-                  por {opportunity.publisher.name}
+
+          {/* Footer */}
+          <div className="card-footer">
+            <div className="card-footer-meta">
+              {opportunity.publisher && (
+                <span className="card-footer-publisher">
+                  {opportunity.publisher.name}
                   {opportunity.publisher.role && (
                     <span className={`card-meta-role card-meta-role--${opportunity.publisher.role}`}>
                       {ROLE_LABELS[opportunity.publisher.role] ?? opportunity.publisher.role}
                     </span>
                   )}
                 </span>
-              </>
-            )}
-            {opportunity.publisher && deadline && <span className="card-meta-sep">·</span>}
-            {deadline && <span>Fecha límite: {deadline}</span>}
-          </p>
-        </div>
-        {isOwner && (
-          <div className="card-actions">
-            <Link to={`/opportunities/${opportunity.id}/edit`}>
-              <button className="btn btn-secondary btn-sm" aria-label="Editar oportunidad">
-                Editar
-              </button>
-            </Link>
-            {onClone && (
-              <button
-                className="btn btn-secondary btn-sm"
-                aria-label="Clonar oportunidad"
-                onClick={() => onClone(opportunity.id)}
-              >
-                Clonar
-              </button>
-            )}
-            {onDelete && (
-              <button
-                className="btn btn-danger btn-sm"
-                aria-label="Eliminar oportunidad"
-                onClick={() => onDelete(opportunity.id)}
-              >
-                Eliminar
-              </button>
+              )}
+              {deadline && (
+                <>
+                  {opportunity.publisher && <span className="card-footer-dot">·</span>}
+                  <span className={`card-deadline${!isDisponible ? ' card-deadline--muted' : ''}`}>
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                    </svg>
+                    Fecha límite: {deadline}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {isOwner && (
+              <div className="card-actions">
+                <Link to={`/opportunities/${opportunity.id}/edit`}>
+                  <button className="btn btn-secondary btn-sm" aria-label="Editar oportunidad">
+                    Editar
+                  </button>
+                </Link>
+                {onClone && (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    aria-label="Clonar oportunidad"
+                    onClick={() => onClone(opportunity.id)}
+                  >
+                    Clonar
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    className="btn btn-danger btn-sm"
+                    aria-label="Eliminar oportunidad"
+                    onClick={() => onDelete(opportunity.id)}
+                  >
+                    Eliminar
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
+
+        </div>
       </div>
     </article>
   );

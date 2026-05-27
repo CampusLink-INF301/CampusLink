@@ -417,11 +417,68 @@ a:hover { text-decoration: underline; }
   flex-wrap: wrap;
 }
 
+.card-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.card-date {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--text-light);
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.card-footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-light);
+  flex-wrap: wrap;
+}
+
+.card-footer-publisher {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.card-footer-dot {
+  color: var(--border-strong);
+}
+
+.card-deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--warning);
+  font-weight: 500;
+}
+
+.card-deadline--muted {
+  color: var(--text-light);
+}
+
 .card-actions {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
 }
 
