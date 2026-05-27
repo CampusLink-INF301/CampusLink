@@ -46,6 +46,10 @@ export class ApplicationsService {
     if (!opportunity)
       throw new NotFoundException(`Opportunity ${dto.opportunityId} not found`);
 
+    if (opportunity.publisher?.id === userId) {
+      throw new BadRequestException('No puedes postular a tu propia oportunidad');
+    }
+
     if (opportunity.status !== OpportunityStatus.DISPONIBLE) {
       throw new BadRequestException(
         'Esta oportunidad no está disponible para postular',
