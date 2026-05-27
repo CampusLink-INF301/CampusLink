@@ -59,6 +59,7 @@ describe('ProfilePage edge cases', () => {
     } as never);
     mockedAppsApi.getMine.mockResolvedValue([mockApplication] as never);
     mockedAppsApi.cancel.mockResolvedValue(undefined as never);
+    mockedAppsApi.getStats.mockResolvedValue({ total: 1, aceptadas: 0, pendientes: 1, rechazadas: 0 } as never);
   });
 
   afterEach(() => {
