@@ -88,26 +88,32 @@ export function ProfilePage() {
 
   return (
     <main className="page">
-      <h1>Mi Perfil</h1>
-
-      <div className="detail-card" data-testid="profile-card">
-        <h2>{user.name}</h2>
-        <p><strong>Email:</strong> {user.email}</p>
-        <p><strong>Rol:</strong> {ROLE_LABELS[user.role] ?? user.role}</p>
+      <div className="page-header">
+        <h1>Mi Perfil</h1>
       </div>
 
-      <h2 style={{ marginTop: '2rem' }}>Mis Postulaciones</h2>
+      <div className="profile-header" data-testid="profile-card">
+        <h2>{user.name}</h2>
+        <div className="profile-meta">
+          <span className="profile-meta-item"><strong>Email:</strong> {user.email}</span>
+          <span className="profile-meta-item"><strong>Rol:</strong> {ROLE_LABELS[user.role] ?? user.role}</span>
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+      <div className="page-header">
+        <h2>Mis Postulaciones</h2>
+      </div>
+
+      <div className="filter-bar">
         <input
           className="input"
           placeholder="Buscar por oportunidad…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           data-testid="profile-search"
+          style={{ flex: 1, minWidth: 200 }}
         />
         <select
-          className="input"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as OpportunityType | '')}
           data-testid="profile-filter-type"
@@ -118,7 +124,6 @@ export function ProfilePage() {
           ))}
         </select>
         <select
-          className="input"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as ApplicationStatus | '')}
           data-testid="profile-filter-status"
@@ -182,11 +187,9 @@ export function ProfilePage() {
                   </div>
                 </div>
                 {app.feedback && (
-                  <div style={{ marginTop: 8, padding: '8px 12px', background: '#f0f4ff', borderRadius: 6 }}>
-                    <strong>Feedback:</strong>
-                    <p style={{ margin: '4px 0 0', fontSize: 14 }} data-testid="application-feedback">
-                      {app.feedback}
-                    </p>
+                  <div className="feedback-box">
+                    <strong>Feedback</strong>
+                    <p data-testid="application-feedback">{app.feedback}</p>
                   </div>
                 )}
               </div>

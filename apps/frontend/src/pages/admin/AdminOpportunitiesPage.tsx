@@ -65,9 +65,11 @@ export function AdminOpportunitiesPage() {
 
   return (
     <main className="page">
-      <h1>Administración — Oportunidades</h1>
+      <div className="page-header">
+        <h1>Oportunidades (Admin)</h1>
+      </div>
 
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <form onSubmit={handleSearch} className="admin-search-bar">
         <input
           className="input"
           placeholder="Buscar por título…"
@@ -93,13 +95,16 @@ export function AdminOpportunitiesPage() {
           <div key={opp.id} className="card" data-testid="admin-opp-item">
             <div className="card-row">
               <div className="card-content">
-                <strong>{opp.title}</strong>
+                <strong className="card-user-name">{opp.title}</strong>
                 <p className="card-meta">
-                  {OPPORTUNITY_TYPE_LABELS[opp.type]} — {opp.publisher?.name ?? 'Desconocido'}
+                  {OPPORTUNITY_TYPE_LABELS[opp.type]}
+                  <span style={{ color: 'var(--border-strong)' }}>·</span>
+                  por {opp.publisher?.name ?? 'Desconocido'}
+                  <span style={{ color: 'var(--border-strong)' }}>·</span>
+                  <span className={`badge badge-status-${opp.status}`}>
+                    {OPPORTUNITY_STATUS_LABELS[opp.status]}
+                  </span>
                 </p>
-                <span className={`badge badge-status-${opp.status}`}>
-                  {OPPORTUNITY_STATUS_LABELS[opp.status]}
-                </span>
               </div>
               <div className="card-actions">
                 <button
@@ -116,7 +121,7 @@ export function AdminOpportunitiesPage() {
       })}
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+        <div className="pagination">
           <button
             className="btn btn-secondary"
             disabled={page <= 1}
@@ -125,7 +130,7 @@ export function AdminOpportunitiesPage() {
           >
             ← Anterior
           </button>
-          <span style={{ lineHeight: '36px' }}>Página {page} de {totalPages}</span>
+          <span className="pagination-info">Página {page} de {totalPages}</span>
           <button
             className="btn btn-secondary"
             disabled={page >= totalPages}

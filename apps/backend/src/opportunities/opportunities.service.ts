@@ -63,7 +63,8 @@ export class OpportunitiesService {
 
     const qb = this.repo
       .createQueryBuilder('opportunity')
-      .leftJoinAndSelect('opportunity.publisher', 'publisher')
+      .leftJoin('opportunity.publisher', 'publisher')
+      .addSelect(['publisher.id', 'publisher.name', 'publisher.role'])
       .where('opportunity.status = :status', {
         status: OpportunityStatus.DISPONIBLE,
       });

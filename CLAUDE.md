@@ -61,8 +61,11 @@ Modules:
 - `auth/` — JWT login/register, `JwtAuthGuard`, `RolesGuard`, `@Roles()` decorator
 - `opportunities/` — CRUD + publisher history + deadline transitions
 - `applications/` — Application state machine, finalization, feedback
-- `admin/` — Admin-only endpoints: suspend/reactivate users, block/unblock opportunities. Run `seed-admin.ts` to create the initial admin user from env vars.
-- `notifications/` — Notification system
+- `admin/` — Admin-only endpoints: suspend/reactivate users, block/unblock opportunities. Seed the initial admin user with:
+  ```bash
+  cd apps/backend && ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=secret npx ts-node -r tsconfig-paths/register src/admin/seed-admin.ts
+  ```
+- `notifications/` — `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/read-all`, `PATCH /notifications/:id/read`. Types: `OPPORTUNITY_MODIFIED`, `OPPORTUNITY_DELETED`, `APPLICATION_RESULT`, `APPLICATION_FEEDBACK`, `APPLICATION_SUBMITTED`. Generated inside `ApplicationsService` and `OpportunitiesService`; returns max 50 records ordered newest-first.
 - `common/util/text.ts` — `normalizeSearch()` strips accents for accent-insensitive ILIKE queries
 
 Key conventions:
@@ -76,7 +79,8 @@ Key conventions:
 ### Frontend (React + Vite)
 
 - All HTTP calls must go through `src/api/` — domain files: `auth.ts`, `opportunities.ts`, `applications.ts`, `admin.ts`, `notifications.ts`. Never use `fetch`/`axios` inline in components.
-- `src/api/__mocks__/client.ts` mocks the Axios instance in tests; `src/api/client.ts` adds a response interceptor that redirects on 401/403.
+- `src/api/client.ts` — request interceptor injects `Authorization: Bearer <token>` from localStorage; response interceptor clears localStorage and redirects to `/login` on 401/403. `src/api/__mocks__/client.ts` provides the mock Axios instance for tests.
+- Auth state lives entirely in localStorage (`token`, `user` keys) — there is no state management library or React context store.
 - Pages are organized by domain under `src/pages/` (`auth/`, `opportunities/`, `admin/`, `profile/`, `notifications/`) and registered in `App.tsx` via React Router v7.
 - Shared TypeScript interfaces live in `src/types/` — keep frontend types aligned with backend entities.
 - CSS modules are mocked with `identity-obj-proxy` in tests.
@@ -107,6 +111,12 @@ VITE_API_URL=http://localhost:3000/api
 
 CI uses `postgresql://postgres:postgres@localhost:5432/campuslink_test` via a GitHub Actions PostgreSQL 15 service container.
 
+## Testing Patterns
+
+**Backend** — use `Test.createTestingModule()` from `@nestjs/testing`. Mock TypeORM repositories via `{ provide: getRepositoryToken(Entity), useValue: { findOne: jest.fn(), ... } }`. Define shared fixture objects as `const baseUser = { ... }` at the top of the test file and spread/override per case.
+
+**Frontend** — wrap page components in `<MemoryRouter>` (or `<MemoryRouter initialEntries={['/path']}>`) for tests. Mock entire API modules with `jest.mock('../api/auth')` and cast to `jest.Mocked<typeof authApi>`. Use `data-testid` attributes (e.g., `login-email`, `btn-login`) for element selection. Clear mocks and localStorage in `beforeEach`.
+
 ## Key Constraints
 
 - **TypeScript strict** — never use `any` without explicit justification
@@ -115,3 +125,4 @@ CI uses `postgresql://postgres:postgres@localhost:5432/campuslink_test` via a Gi
 - **No production `synchronize: true`** — TypeORM migrations required for production deployments
 - RBAC enforcement is active; do not bypass role checks. `RolesGuard` must be applied alongside `JwtAuthGuard` on any role-restricted route.
 - Backend tests are co-located (`.spec.ts` alongside source); frontend tests use `.test.tsx` suffix
+- Prefix intentionally unused variables with `_` to satisfy ESLint (`_unused`, `_event`, etc.)

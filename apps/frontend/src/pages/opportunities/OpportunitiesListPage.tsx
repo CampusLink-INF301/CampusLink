@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { opportunitiesApi } from '../../api/opportunities';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import { SearchBar } from '../../components/SearchBar';
@@ -68,10 +69,51 @@ export function OpportunitiesListPage() {
     return () => observer.disconnect();
   }, [loading, hasMore, offset, loadPage]);
 
+  const isLoggedIn = !!localStorage.getItem('token');
+
   return (
     <main className="page">
-      <div className="page-header">
-        <h1>Oportunidades</h1>
+      <div className="page-hero page-hero--landing">
+        <p className="hero-eyebrow">Plataforma universitaria de oportunidades</p>
+        <h1>Tutorías, prácticas, ayudantías y más en un solo lugar</h1>
+        <p className="hero-subtitle">
+          Estudiantes encuentran oportunidades relevantes. Docentes e instituciones
+          las publican y gestionan. Todo en CampusLink.
+        </p>
+
+        <div className="hero-chips">
+          <span className="hero-chip">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z"/>
+            </svg>
+            Publica oportunidades
+          </span>
+          <span className="hero-chip">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
+            </svg>
+            Explora y filtra
+          </span>
+          <span className="hero-chip">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+            </svg>
+            Postula en un clic
+          </span>
+          <span className="hero-chip">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+            </svg>
+            Notificaciones en tiempo real
+          </span>
+        </div>
+
+        {!isLoggedIn && (
+          <div className="hero-cta">
+            <Link to="/register" className="btn-hero-primary">Crear cuenta gratis</Link>
+            <Link to="/login" className="btn-hero-outline">Ingresar</Link>
+          </div>
+        )}
       </div>
 
       <SearchBar onSearch={resetAndLoad} />

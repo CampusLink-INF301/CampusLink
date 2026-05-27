@@ -69,7 +69,7 @@ export interface Opportunity {
   requirements?: string;
   deadline?: string;
   status: OpportunityStatus;
-  publisher?: { id: string; name: string };
+  publisher?: { id: string; name: string; role?: string };
   formFields?: FormField[] | null;
   createdAt: string;
   updatedAt: string;

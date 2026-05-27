@@ -70,9 +70,11 @@ export function AdminUsersPage() {
 
   return (
     <main className="page">
-      <h1>Administración — Usuarios</h1>
+      <div className="page-header">
+        <h1>Usuarios</h1>
+      </div>
 
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <form onSubmit={handleSearch} className="admin-search-bar">
         <input
           className="input"
           placeholder="Buscar por nombre o email…"
@@ -96,9 +98,8 @@ export function AdminUsersPage() {
         <div key={user.id} className="card" data-testid="admin-user-item">
           <div className="card-row">
             <div className="card-content">
-              <strong>{user.name}</strong>
-              <p className="card-meta">{user.email}</p>
-              <p className="card-meta">{ROLE_LABELS[user.role] ?? user.role}</p>
+              <span className="card-user-name">{user.name}</span>
+              <p className="card-meta">{user.email} · {ROLE_LABELS[user.role] ?? user.role}</p>
             </div>
             <div className="card-actions">
               {user.suspended && (
@@ -117,7 +118,7 @@ export function AdminUsersPage() {
       ))}
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+        <div className="pagination">
           <button
             className="btn btn-secondary"
             disabled={page <= 1}
@@ -126,7 +127,7 @@ export function AdminUsersPage() {
           >
             ← Anterior
           </button>
-          <span style={{ lineHeight: '36px' }}>Página {page} de {totalPages}</span>
+          <span className="pagination-info">Página {page} de {totalPages}</span>
           <button
             className="btn btn-secondary"
             disabled={page >= totalPages}

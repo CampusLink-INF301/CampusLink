@@ -2,6 +2,13 @@ import { Link } from 'react-router-dom';
 import type { Opportunity } from '../types/opportunity';
 import { OPPORTUNITY_TYPE_LABELS } from '../types/opportunity';
 
+const ROLE_LABELS: Record<string, string> = {
+  estudiante: 'Estudiante',
+  docente: 'Docente',
+  institucion: 'Institución',
+  admin: 'Administrador',
+};
+
 interface Props {
   opportunity: Opportunity;
   onDelete?: (id: string) => void;
@@ -31,9 +38,22 @@ export function OpportunityCard({ opportunity, onDelete, onClone, currentUserId 
               ? `${opportunity.description.slice(0, 120)}…`
               : opportunity.description}
           </p>
-          {deadline && (
-            <p className="card-meta">Fecha límite: {deadline}</p>
-          )}
+          <p className="card-meta">
+            {opportunity.publisher && (
+              <>
+                <span>
+                  por {opportunity.publisher.name}
+                  {opportunity.publisher.role && (
+                    <span className={`card-meta-role card-meta-role--${opportunity.publisher.role}`}>
+                      {ROLE_LABELS[opportunity.publisher.role] ?? opportunity.publisher.role}
+                    </span>
+                  )}
+                </span>
+              </>
+            )}
+            {opportunity.publisher && deadline && <span className="card-meta-sep">·</span>}
+            {deadline && <span>Fecha límite: {deadline}</span>}
+          </p>
         </div>
         {isOwner && (
           <div className="card-actions">
