@@ -25,8 +25,8 @@ function getCurrentUserRole(): string | null {
 
 export function OpportunityForm({ initial = {}, onSubmit, submitLabel = 'Guardar' }: Props) {
   const role = getCurrentUserRole();
-  const allowedTypes =
-    (role && ALLOWED_TYPES_BY_ROLE[role]) ?? Object.values(OpportunityType);
+  const allowedTypes: OpportunityType[] =
+    (role ? ALLOWED_TYPES_BY_ROLE[role] : undefined) ?? Object.values(OpportunityType);
   const defaultType = initial.type ?? allowedTypes[0] ?? OpportunityType.OTRO;
 
   const [title, setTitle]               = useState(initial.title ?? '');
