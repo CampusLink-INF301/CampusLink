@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { Application, ApplicationStatus } from './entities/application.entity';
+import { Message } from './entities/message.entity';
 import {
   Opportunity,
   OpportunityStatus,
@@ -18,6 +19,7 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { FinalizeOpportunityDto } from './dto/finalize-opportunity.dto';
 import { FeedbackDto } from './dto/feedback.dto';
 import { QueryApplicationDto } from './dto/query-application.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import { normalizeSearch } from '../common/util/text';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/entities/notification.entity';
@@ -29,6 +31,8 @@ export class ApplicationsService {
     private readonly repo: Repository<Application>,
     @InjectRepository(Opportunity)
     private readonly opportunityRepo: Repository<Opportunity>,
+    @InjectRepository(Message)
+    private readonly messageRepo: Repository<Message>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly notificationsService: NotificationsService,
@@ -304,5 +308,96 @@ export class ApplicationsService {
     }
 
     return qb.getMany();
+  }
+
+  async getStats(userId: string): Promise<{
+    total: number;
+    aceptadas: number;
+    pendientes: number;
+    rechazadas: number;
+  }> {
+    const all = await this.repo.find({
+      where: { user: { id: userId } },
+      select: ['id', 'status'],
+    });
+    return {
+      total: all.length,
+      aceptadas: all.filter((a) => a.status === ApplicationStatus.ACEPTADO).length,
+      pendientes: all.filter(
+        (a) =>
+          a.status === ApplicationStatus.POSTULADO ||
+          a.status === ApplicationStatus.EN_EVALUACION,
+      ).length,
+      rechazadas: all.filter(
+        (a) => a.status === ApplicationStatus.NO_SELECCIONADO,
+      ).length,
+    };
+  }
+
+  async findOne(userId: string, applicationId: string): Promise<Application> {
+    const application = await this.repo.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'opportunity', 'opportunity.publisher'],
+    });
+    if (!application) throw new NotFoundException('Application not found');
+
+    const isApplicant = application.user.id === userId;
+    const isPublisher = application.opportunity.publisher?.id === userId;
+    if (!isApplicant && !isPublisher) throw new ForbiddenException('No tienes permiso');
+
+    return application;
+  }
+
+  async getMessages(userId: string, applicationId: string): Promise<Message[]> {
+    const application = await this.repo.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'opportunity', 'opportunity.publisher'],
+    });
+    if (!application) throw new NotFoundException('Application not found');
+
+    const isApplicant = application.user.id === userId;
+    const isPublisher = application.opportunity.publisher?.id === userId;
+    if (!isApplicant && !isPublisher) throw new ForbiddenException('No tienes permiso');
+
+    if (application.status !== ApplicationStatus.ACEPTADO) {
+      throw new BadRequestException(
+        'El chat solo está disponible para postulaciones aceptadas',
+      );
+    }
+
+    return this.messageRepo.find({
+      where: { application: { id: applicationId } },
+      relations: ['sender'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async sendMessage(
+    userId: string,
+    applicationId: string,
+    dto: CreateMessageDto,
+  ): Promise<Message> {
+    const application = await this.repo.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'opportunity', 'opportunity.publisher'],
+    });
+    if (!application) throw new NotFoundException('Application not found');
+
+    const isApplicant = application.user.id === userId;
+    const isPublisher = application.opportunity.publisher?.id === userId;
+    if (!isApplicant && !isPublisher) throw new ForbiddenException('No tienes permiso');
+
+    if (application.status !== ApplicationStatus.ACEPTADO) {
+      throw new BadRequestException(
+        'El chat solo está disponible para postulaciones aceptadas',
+      );
+    }
+
+    const message = this.messageRepo.create({
+      application: { id: applicationId } as Application,
+      sender: { id: userId } as User,
+      content: dto.content,
+    });
+    return this.messageRepo.save(message);
   }
 }

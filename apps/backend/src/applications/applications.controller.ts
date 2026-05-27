@@ -17,6 +17,7 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { FinalizeOpportunityDto } from './dto/finalize-opportunity.dto';
 import { FeedbackDto } from './dto/feedback.dto';
 import { QueryApplicationDto } from './dto/query-application.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -82,5 +83,31 @@ export class ApplicationsController {
     @Request() req: AuthRequest,
   ) {
     return this.service.setFeedback(id, req.user.id, dto);
+  }
+
+  @Get('mine/stats')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ESTUDIANTE)
+  getStats(@Request() req: AuthRequest) {
+    return this.service.getStats(req.user.id);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string, @Request() req: AuthRequest) {
+    return this.service.findOne(req.user.id, id);
+  }
+
+  @Get(':id/messages')
+  getMessages(@Param('id') id: string, @Request() req: AuthRequest) {
+    return this.service.getMessages(req.user.id, id);
+  }
+
+  @Post(':id/messages')
+  sendMessage(
+    @Param('id') id: string,
+    @Body() dto: CreateMessageDto,
+    @Request() req: AuthRequest,
+  ) {
+    return this.service.sendMessage(req.user.id, id, dto);
   }
 }
