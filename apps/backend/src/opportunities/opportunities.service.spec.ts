@@ -16,7 +16,9 @@ import { Application } from '../applications/entities/application.entity';
 import { UserRole } from '../auth/entities/user.entity';
 
 const mockQbChain = {
+  leftJoin: jest.fn().mockReturnThis(),
   leftJoinAndSelect: jest.fn().mockReturnThis(),
+  addSelect: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
   andWhere: jest.fn().mockReturnThis(),
   orderBy: jest.fn().mockReturnThis(),
