@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications';
-import { APPLICATION_STATUS_LABELS } from '../../types/application';
+import { APPLICATION_STATUS_LABELS, ApplicationStatus } from '../../types/application';
 import { OpportunityStatus } from '../../types/opportunity';
 import type { Application } from '../../types/application';
 import type { FormField } from '../../types/opportunity';
@@ -59,8 +59,15 @@ export function OpportunityApplicantsPage() {
   }, [id, navigate]);
 
   const oppStatus = applications[0]?.opportunity?.status as OpportunityStatus | undefined;
-  const isEnEvaluacion = oppStatus === OpportunityStatus.EN_EVALUACION;
-  const isFinalized = oppStatus === OpportunityStatus.FINALIZADO || oppStatus === OpportunityStatus.DESIERTA;
+  const isEnEvaluacion =
+    oppStatus === OpportunityStatus.EN_EVALUACION ||
+    applications.some((a) => a.status === ApplicationStatus.EN_EVALUACION);
+  const isFinalized =
+    oppStatus === OpportunityStatus.FINALIZADO ||
+    oppStatus === OpportunityStatus.DESIERTA ||
+    applications.some(
+      (a) => a.status === ApplicationStatus.ACEPTADO || a.status === ApplicationStatus.NO_SELECCIONADO,
+    );
   const formFields = (applications[0]?.opportunity?.formFields ?? []) as FormField[];
 
   const toggleSelect = (appId: string) => {

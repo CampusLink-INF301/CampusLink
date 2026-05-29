@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Put,
   Delete,
   Body,
@@ -76,5 +77,13 @@ export class OpportunitiesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string, @Request() req: AuthRequest) {
     return this.service.remove(id, req.user.id);
+  }
+
+  @Patch(':id/close')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION, UserRole.ESTUDIANTE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  closeApplications(@Param('id') id: string, @Request() req: AuthRequest) {
+    return this.service.closeApplications(id, req.user.id);
   }
 }

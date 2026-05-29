@@ -85,6 +85,16 @@ export function PublisherHistoryPage() {
     navigate(`/opportunities/${cloned.id}/edit`);
   };
 
+  const handleCloseApplications = async (id: string) => {
+    if (!confirm('¿Cerrar las postulaciones? Pasarán a evaluación y no se podrán recibir nuevas postulaciones.')) return;
+    try {
+      await opportunitiesApi.closeApplications(id);
+      navigate(`/my-opportunities/${id}/applicants`);
+    } catch {
+      setError('Error al cerrar las postulaciones.');
+    }
+  };
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -158,6 +168,17 @@ export function PublisherHistoryPage() {
             onDelete={handleDelete}
             onClone={handleClone}
           />
+          {o.status === OpportunityStatus.DISPONIBLE && (
+            <div style={{ marginTop: -8, marginBottom: 12, paddingLeft: 4 }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => void handleCloseApplications(o.id)}
+                data-testid={`btn-close-${o.id}`}
+              >
+                Cerrar postulaciones
+              </button>
+            </div>
+          )}
           {[OpportunityStatus.EN_EVALUACION, OpportunityStatus.FINALIZADO, OpportunityStatus.DESIERTA].includes(o.status) && (
             <div style={{ marginTop: -8, marginBottom: 12, paddingLeft: 4 }}>
               <Link

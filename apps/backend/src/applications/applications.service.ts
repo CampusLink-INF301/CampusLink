@@ -157,7 +157,7 @@ export class ApplicationsService {
 
     return this.repo.find({
       where: { opportunity: { id: opportunityId } },
-      relations: ['user'],
+      relations: ['user', 'opportunity'],
       order: { createdAt: 'ASC' },
     });
   }

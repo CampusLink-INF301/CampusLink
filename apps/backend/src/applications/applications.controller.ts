@@ -57,14 +57,14 @@ export class ApplicationsController {
 
   @Get('by-opportunity/:id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION)
+  @Roles(UserRole.ESTUDIANTE, UserRole.DOCENTE, UserRole.INSTITUCION)
   getByOpportunity(@Param('id') id: string, @Request() req: AuthRequest) {
     return this.service.findByOpportunity(id, req.user.id);
   }
 
   @Post('finalize/:opportunityId')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION)
+  @Roles(UserRole.ESTUDIANTE, UserRole.DOCENTE, UserRole.INSTITUCION)
   @HttpCode(HttpStatus.NO_CONTENT)
   finalize(
     @Param('opportunityId') opportunityId: string,
@@ -76,7 +76,7 @@ export class ApplicationsController {
 
   @Put(':id/feedback')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.DOCENTE, UserRole.INSTITUCION)
+  @Roles(UserRole.ESTUDIANTE, UserRole.DOCENTE, UserRole.INSTITUCION)
   setFeedback(
     @Param('id') id: string,
     @Body() dto: FeedbackDto,

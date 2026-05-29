@@ -235,6 +235,34 @@ export class OpportunitiesService {
     await this.repo.remove(opportunity);
   }
 
+  async closeApplications(opportunityId: string, userId: string): Promise<void> {
+    const opportunity = await this.repo.findOne({
+      where: { id: opportunityId },
+      relations: ['publisher'],
+    });
+    if (!opportunity)
+      throw new NotFoundException(`Opportunity ${opportunityId} not found`);
+    if (opportunity.publisher?.id !== userId)
+      throw new ForbiddenException('No tienes permiso');
+    if (opportunity.status !== OpportunityStatus.DISPONIBLE) {
+      throw new BadRequestException(
+        'Solo se pueden cerrar oportunidades en estado Disponible',
+      );
+    }
+
+    opportunity.status = OpportunityStatus.EN_EVALUACION;
+    await this.repo.save(opportunity);
+    await this.appRepo
+      .createQueryBuilder()
+      .update()
+      .set({ status: ApplicationStatus.EN_EVALUACION })
+      .where('opportunity_id = :id AND status = :status', {
+        id: opportunityId,
+        status: ApplicationStatus.POSTULADO,
+      })
+      .execute();
+  }
+
   async clone(
     id: string,
     userId: string,

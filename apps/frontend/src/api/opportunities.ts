@@ -42,4 +42,7 @@ export const opportunitiesApi = {
 
   clone: (id: string) =>
     client.post<Opportunity>(`/opportunities/${id}/clone`).then((r) => r.data),
+
+  closeApplications: (id: string) =>
+    client.patch(`/opportunities/${id}/close`),
 };
