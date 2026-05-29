@@ -90,8 +90,9 @@ export function PublisherHistoryPage() {
     try {
       await opportunitiesApi.closeApplications(id);
       navigate(`/my-opportunities/${id}/applicants`);
-    } catch {
-      setError('Error al cerrar las postulaciones.');
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg || 'Error al cerrar las postulaciones.');
     }
   };
 
@@ -169,7 +170,7 @@ export function PublisherHistoryPage() {
             onClone={handleClone}
           />
           {o.status === OpportunityStatus.DISPONIBLE && (
-            <div style={{ marginTop: -8, marginBottom: 12, paddingLeft: 4 }}>
+            <div style={{ marginTop: -8, marginBottom: 12, paddingLeft: 4, display: 'flex', gap: 8 }}>
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => void handleCloseApplications(o.id)}
@@ -177,6 +178,13 @@ export function PublisherHistoryPage() {
               >
                 Cerrar postulaciones
               </button>
+              <Link
+                to={`/my-opportunities/${o.id}/applicants`}
+                className="btn btn-secondary btn-sm"
+                data-testid={`link-applicants-${o.id}`}
+              >
+                Ver postulantes
+              </Link>
             </div>
           )}
           {[OpportunityStatus.EN_EVALUACION, OpportunityStatus.FINALIZADO, OpportunityStatus.DESIERTA].includes(o.status) && (

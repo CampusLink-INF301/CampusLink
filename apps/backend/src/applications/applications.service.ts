@@ -149,11 +149,6 @@ export class ApplicationsService {
       throw new NotFoundException(`Opportunity ${opportunityId} not found`);
     if (opportunity.publisher?.id !== requesterId)
       throw new ForbiddenException('No tienes permiso');
-    if (opportunity.status === OpportunityStatus.DISPONIBLE) {
-      throw new BadRequestException(
-        'La oportunidad debe haber cerrado antes de ver postulantes',
-      );
-    }
 
     return this.repo.find({
       where: { opportunity: { id: opportunityId } },

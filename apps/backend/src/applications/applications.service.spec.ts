@@ -295,12 +295,13 @@ describe('ApplicationsService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('throws BadRequestException when opportunity is DISPONIBLE', async () => {
+    it('returns applications for publisher when opportunity is DISPONIBLE', async () => {
       mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
+      mockAppRepo.find.mockResolvedValue([baseApplication]);
 
-      await expect(
-        service.findByOpportunity('opp-1', 'user-1'),
-      ).rejects.toThrow(BadRequestException);
+      const result = await service.findByOpportunity('opp-1', 'user-1');
+
+      expect(result).toEqual([baseApplication]);
     });
   });
 

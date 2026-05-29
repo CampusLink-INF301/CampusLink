@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications';
+import { opportunitiesApi } from '../../api/opportunities';
 import { APPLICATION_STATUS_LABELS, ApplicationStatus } from '../../types/application';
 import { OpportunityStatus } from '../../types/opportunity';
 import type { Application } from '../../types/application';
@@ -59,6 +60,7 @@ export function OpportunityApplicantsPage() {
   }, [id, navigate]);
 
   const oppStatus = applications[0]?.opportunity?.status as OpportunityStatus | undefined;
+  const isDisponible = oppStatus === OpportunityStatus.DISPONIBLE;
   const isEnEvaluacion =
     oppStatus === OpportunityStatus.EN_EVALUACION ||
     applications.some((a) => a.status === ApplicationStatus.EN_EVALUACION);
@@ -93,6 +95,21 @@ export function OpportunityApplicantsPage() {
     }
   };
 
+  const handleCloseApplications = async () => {
+    if (!id || !confirm('¿Cerrar las postulaciones? No se podrán recibir nuevas postulaciones.')) return;
+    setSubmitting(true);
+    try {
+      await opportunitiesApi.closeApplications(id);
+      const apps = await applicationsApi.getByOpportunity(id);
+      setApplications(apps);
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg || 'Error al cerrar las postulaciones.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSaveFeedback = async (appId: string) => {
     const feedback = feedbacks[appId] ?? '';
     setFeedbackStatus((prev) => ({ ...prev, [appId]: 'saving' }));
@@ -112,6 +129,21 @@ export function OpportunityApplicantsPage() {
       <h1>Postulantes</h1>
 
       {error && <p className="form-error" role="alert">{error}</p>}
+
+      {isDisponible && (
+        <div className="info-banner" style={{ marginBottom: 16 }}>
+          <p>Las postulaciones están abiertas. Puedes ver los postulantes, pero para seleccionarlos primero debes cerrar las postulaciones.</p>
+          <button
+            className="btn btn-secondary btn-sm"
+            style={{ marginTop: 8 }}
+            onClick={() => void handleCloseApplications()}
+            disabled={submitting}
+            data-testid="btn-close-applications"
+          >
+            {submitting ? 'Cerrando…' : 'Cerrar postulaciones'}
+          </button>
+        </div>
+      )}
 
       {applications.length === 0 && (
         <p className="loading-text">No hay postulantes para esta oportunidad.</p>

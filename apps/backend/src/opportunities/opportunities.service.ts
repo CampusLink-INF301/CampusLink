@@ -252,15 +252,10 @@ export class OpportunitiesService {
 
     opportunity.status = OpportunityStatus.EN_EVALUACION;
     await this.repo.save(opportunity);
-    await this.appRepo
-      .createQueryBuilder()
-      .update()
-      .set({ status: ApplicationStatus.EN_EVALUACION })
-      .where('opportunity_id = :id AND status = :status', {
-        id: opportunityId,
-        status: ApplicationStatus.POSTULADO,
-      })
-      .execute();
+    await this.appRepo.update(
+      { opportunity: { id: opportunityId }, status: ApplicationStatus.POSTULADO },
+      { status: ApplicationStatus.EN_EVALUACION },
+    );
   }
 
   async clone(
