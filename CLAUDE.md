@@ -36,7 +36,12 @@ cd apps/frontend && npm run test:coverage
 cd apps/frontend && npx jest src/components/OpportunityCard.test.tsx
 ```
 
-**Do NOT add or run Playwright tests** — E2E testing is reserved for a future deliverable. Do not modify `playwright.config.ts`.
+### E2E Testing (Playwright)
+```bash
+cd apps/frontend && npx playwright test                        # run all E2E tests
+cd apps/frontend && npx playwright test tests/auth.spec.ts     # single spec
+cd apps/frontend && npx playwright show-report                 # view HTML report
+```
 
 ### Build & Lint
 ```bash
@@ -121,7 +126,7 @@ CI uses `postgresql://postgres:postgres@localhost:5432/campuslink_test` via a Gi
 
 - **TypeScript strict** — never use `any` without explicit justification
 - **No new libraries** without proposing alternatives and justifying the choice
-- **No Playwright** — tests use Jest only (backend: `ts-jest`, frontend: `babel-jest` + `jsdom`)
+- **Jest** for unit tests (backend: `ts-jest`, frontend: `babel-jest` + `jsdom`); **Playwright** for E2E tests (`apps/frontend/tests/`)
 - **No production `synchronize: true`** — TypeORM migrations required for production deployments
 - RBAC enforcement is active; do not bypass role checks. `RolesGuard` must be applied alongside `JwtAuthGuard` on any role-restricted route.
 - Backend tests are co-located (`.spec.ts` alongside source); frontend tests use `.test.tsx` suffix
