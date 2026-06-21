@@ -23,6 +23,12 @@ jest.mock('../../api/applications', () => ({
   },
 }));
 
+jest.mock('../../api/opportunities', () => ({
+  opportunitiesApi: {
+    closeApplications: jest.fn(),
+  },
+}));
+
 const mockedApi = applicationsApi as jest.Mocked<typeof applicationsApi>;
 
 const baseApp = {

@@ -89,14 +89,16 @@ export function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    setApplicationsError('');
     applicationsApi
       .getMine({
         search: search || undefined,
         type: filterType || undefined,
         status: filterStatus || undefined,
       })
-      .then(setApplications)
+      .then((data) => {
+        setApplications(data);
+        setApplicationsError('');
+      })
       .catch(() => setApplicationsError('No se pudieron cargar las postulaciones.'));
   }, [search, filterType, filterStatus]);
 

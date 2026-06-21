@@ -14,7 +14,9 @@ export class SavedService {
   ) {}
 
   async save(userId: string, opportunityId: string): Promise<void> {
-    const opportunity = await this.opportunityRepo.findOneBy({ id: opportunityId });
+    const opportunity = await this.opportunityRepo.findOneBy({
+      id: opportunityId,
+    });
     if (!opportunity) throw new NotFoundException('Opportunity not found');
 
     const existing = await this.repo.findOne({
@@ -24,8 +26,8 @@ export class SavedService {
 
     await this.repo.save(
       this.repo.create({
-        user: { id: userId } as any,
-        opportunity: { id: opportunityId } as any,
+        user: { id: userId },
+        opportunity: { id: opportunityId },
       }),
     );
   }
