@@ -16,11 +16,13 @@ test.describe('List opportunities', () => {
   });
 
   test('shows opportunities on the main list', async ({ page }) => {
+    await loginAs(page, 'estudiante');
     await page.goto('/opportunities');
     await expect(page.getByTestId('opportunity-card').first()).toBeVisible();
   });
 
   test('shows the created opportunity on the list', async ({ page }) => {
+    await loginAs(page, 'estudiante');
     await page.goto('/opportunities');
     await expect(page.getByText(title)).toBeVisible();
   });
