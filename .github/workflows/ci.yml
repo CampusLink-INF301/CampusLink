@@ -115,7 +115,7 @@ jobs:
       - name: Start backend
         run: npm run start:dev --workspace=apps/backend &
       - name: Wait for backend
-        run: npx wait-on http://localhost:3000/api --timeout 60000
+        run: npx wait-on http://localhost:3000/api/opportunities --timeout 60000
       - name: Start frontend
         run: npm run dev --workspace=apps/frontend &
       - name: Wait for frontend
