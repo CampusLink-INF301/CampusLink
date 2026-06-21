@@ -35,6 +35,8 @@ playwright/.cache/
 
 # Claude Code (AI assistant local config — machine-specific)
 .claude/
+.agents/
+skills-lock.json
 
 # Editor
 .vscode/
@@ -54,3 +56,10 @@ dist/
 docs/prompt_presentacion_pptx.md
 docs/presentacion-e1.md
 docs/prompt-claude-design.md
+
+# Enunciados de entrega (no deben subirse)
+/entrega2.md
+/entrega3.md
+
+# Presentación de referencia (binario pesado, no se versiona)
+/CampusLink_Presentacion.pptx

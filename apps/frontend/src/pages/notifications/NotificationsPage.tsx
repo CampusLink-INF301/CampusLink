@@ -35,7 +35,7 @@ export function NotificationsPage() {
   const unread = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="container">
+    <main className="page">
       <div className="page-header">
         <h1>Notificaciones</h1>
         {unread > 0 && (
@@ -74,6 +74,6 @@ export function NotificationsPage() {
           ))}
         </ul>
       )}
-    </div>
+    </main>
   );
 }

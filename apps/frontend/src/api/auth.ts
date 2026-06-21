@@ -3,6 +3,7 @@ import client from './client';
 export interface LoginPayload { email: string; password: string; }
 export interface RegisterPayload { name: string; email: string; password: string; role?: string; }
 export interface AuthResponse { token: string; user: { id: string; name: string; email: string; role: string; suspended?: boolean; }; }
+export interface UpdateProfilePayload { name?: string; currentPassword?: string; newPassword?: string; }
 
 export const authApi = {
   login: (payload: LoginPayload) =>
@@ -11,4 +12,6 @@ export const authApi = {
     client.post<AuthResponse>('/auth/register', payload).then((r) => r.data),
   getMe: () =>
     client.get<AuthResponse['user']>('/auth/me').then((r) => r.data),
+  updateMe: (payload: UpdateProfilePayload) =>
+    client.patch<AuthResponse['user']>('/auth/me', payload).then((r) => r.data),
 };

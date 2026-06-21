@@ -63,7 +63,8 @@ export class OpportunitiesService {
 
     const qb = this.repo
       .createQueryBuilder('opportunity')
-      .leftJoinAndSelect('opportunity.publisher', 'publisher')
+      .leftJoin('opportunity.publisher', 'publisher')
+      .addSelect(['publisher.id', 'publisher.name', 'publisher.role'])
       .where('opportunity.status = :status', {
         status: OpportunityStatus.DISPONIBLE,
       });
@@ -232,6 +233,29 @@ export class OpportunitiesService {
       );
     }
     await this.repo.remove(opportunity);
+  }
+
+  async closeApplications(opportunityId: string, userId: string): Promise<void> {
+    const opportunity = await this.repo.findOne({
+      where: { id: opportunityId },
+      relations: ['publisher'],
+    });
+    if (!opportunity)
+      throw new NotFoundException(`Opportunity ${opportunityId} not found`);
+    if (opportunity.publisher?.id !== userId)
+      throw new ForbiddenException('No tienes permiso');
+    if (opportunity.status !== OpportunityStatus.DISPONIBLE) {
+      throw new BadRequestException(
+        'Solo se pueden cerrar oportunidades en estado Disponible',
+      );
+    }
+
+    opportunity.status = OpportunityStatus.EN_EVALUACION;
+    await this.repo.save(opportunity);
+    await this.appRepo.update(
+      { opportunity: { id: opportunityId }, status: ApplicationStatus.POSTULADO },
+      { status: ApplicationStatus.EN_EVALUACION },
+    );
   }
 
   async clone(

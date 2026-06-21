@@ -80,22 +80,40 @@ export function PublisherHistoryPage() {
     void load(page);
   };
 
+  const handleClone = async (id: string) => {
+    const cloned = await opportunitiesApi.clone(id);
+    navigate(`/opportunities/${cloned.id}/edit`);
+  };
+
+  const handleCloseApplications = async (id: string) => {
+    if (!confirm('¿Cerrar las postulaciones? Pasarán a evaluación y no se podrán recibir nuevas postulaciones.')) return;
+    try {
+      await opportunitiesApi.closeApplications(id);
+      navigate(`/my-opportunities/${id}/applicants`);
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg || 'Error al cerrar las postulaciones.');
+    }
+  };
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <main className="page">
-      <h1>Mis oportunidades</h1>
+      <div className="page-header">
+        <h1>Mis oportunidades</h1>
+        <Link to="/opportunities/new" className="btn btn-primary">+ Nueva oportunidad</Link>
+      </div>
 
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+      <form onSubmit={handleSearch} className="filter-bar">
         <input
-          className="input"
           placeholder="Buscar por nombre…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           data-testid="history-search"
+          style={{ flex: 1, minWidth: 180 }}
         />
         <select
-          className="input"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as OpportunityType | '')}
           data-testid="history-filter-type"
@@ -106,7 +124,6 @@ export function PublisherHistoryPage() {
           ))}
         </select>
         <select
-          className="input"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as OpportunityStatus | '')}
           data-testid="history-filter-status"
@@ -117,7 +134,6 @@ export function PublisherHistoryPage() {
           ))}
         </select>
         <select
-          className="input"
           value={`${sortBy}:${sortDir}`}
           onChange={(e) => {
             const [by, dir] = e.target.value.split(':') as ['createdAt' | 'deadline' | 'status', 'ASC' | 'DESC'];
@@ -132,8 +148,8 @@ export function PublisherHistoryPage() {
           <option value="deadline:DESC">Fecha límite lejana</option>
           <option value="status:ASC">Estado A-Z</option>
         </select>
-        <button type="submit" className="btn btn-primary" data-testid="history-btn-search">Buscar</button>
-        <button type="button" className="btn btn-secondary" onClick={handleClearFilters} data-testid="history-btn-clear">Limpiar</button>
+        <button type="submit" className="btn btn-primary btn-sm" data-testid="history-btn-search">Buscar</button>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={handleClearFilters} data-testid="history-btn-clear">Limpiar</button>
       </form>
 
       {loading && <p className="loading-text">Cargando…</p>}
@@ -151,7 +167,26 @@ export function PublisherHistoryPage() {
             opportunity={o}
             currentUserId={currentUser?.id}
             onDelete={handleDelete}
+            onClone={handleClone}
           />
+          {o.status === OpportunityStatus.DISPONIBLE && (
+            <div style={{ marginTop: -8, marginBottom: 12, paddingLeft: 4, display: 'flex', gap: 8 }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => void handleCloseApplications(o.id)}
+                data-testid={`btn-close-${o.id}`}
+              >
+                Cerrar postulaciones
+              </button>
+              <Link
+                to={`/my-opportunities/${o.id}/applicants`}
+                className="btn btn-secondary btn-sm"
+                data-testid={`link-applicants-${o.id}`}
+              >
+                Ver postulantes
+              </Link>
+            </div>
+          )}
           {[OpportunityStatus.EN_EVALUACION, OpportunityStatus.FINALIZADO, OpportunityStatus.DESIERTA].includes(o.status) && (
             <div style={{ marginTop: -8, marginBottom: 12, paddingLeft: 4 }}>
               <Link
@@ -167,7 +202,7 @@ export function PublisherHistoryPage() {
       ))}
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+        <div className="pagination">
           <button
             className="btn btn-secondary"
             disabled={page <= 1}
@@ -176,7 +211,7 @@ export function PublisherHistoryPage() {
           >
             ← Anterior
           </button>
-          <span style={{ lineHeight: '36px' }}>Página {page} de {totalPages}</span>
+          <span className="pagination-info">Página {page} de {totalPages}</span>
           <button
             className="btn btn-secondary"
             disabled={page >= totalPages}

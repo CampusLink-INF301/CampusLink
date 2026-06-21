@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications';
-import { APPLICATION_STATUS_LABELS } from '../../types/application';
+import { opportunitiesApi } from '../../api/opportunities';
+import { APPLICATION_STATUS_LABELS, ApplicationStatus } from '../../types/application';
 import { OpportunityStatus } from '../../types/opportunity';
 import type { Application } from '../../types/application';
 import type { FormField } from '../../types/opportunity';
@@ -41,6 +42,7 @@ export function OpportunityApplicantsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
 
   useEffect(() => {
     if (!id) return;
@@ -58,8 +60,16 @@ export function OpportunityApplicantsPage() {
   }, [id, navigate]);
 
   const oppStatus = applications[0]?.opportunity?.status as OpportunityStatus | undefined;
-  const isEnEvaluacion = oppStatus === OpportunityStatus.EN_EVALUACION;
-  const isFinalized = oppStatus === OpportunityStatus.FINALIZADO || oppStatus === OpportunityStatus.DESIERTA;
+  const isDisponible = oppStatus === OpportunityStatus.DISPONIBLE;
+  const isEnEvaluacion =
+    oppStatus === OpportunityStatus.EN_EVALUACION ||
+    applications.some((a) => a.status === ApplicationStatus.EN_EVALUACION);
+  const isFinalized =
+    oppStatus === OpportunityStatus.FINALIZADO ||
+    oppStatus === OpportunityStatus.DESIERTA ||
+    applications.some(
+      (a) => a.status === ApplicationStatus.ACEPTADO || a.status === ApplicationStatus.NO_SELECCIONADO,
+    );
   const formFields = (applications[0]?.opportunity?.formFields ?? []) as FormField[];
 
   const toggleSelect = (appId: string) => {
@@ -85,9 +95,30 @@ export function OpportunityApplicantsPage() {
     }
   };
 
+  const handleCloseApplications = async () => {
+    if (!id || !confirm('¿Cerrar las postulaciones? No se podrán recibir nuevas postulaciones.')) return;
+    setSubmitting(true);
+    try {
+      await opportunitiesApi.closeApplications(id);
+      const apps = await applicationsApi.getByOpportunity(id);
+      setApplications(apps);
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg || 'Error al cerrar las postulaciones.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSaveFeedback = async (appId: string) => {
     const feedback = feedbacks[appId] ?? '';
-    await applicationsApi.setFeedback(appId, feedback);
+    setFeedbackStatus((prev) => ({ ...prev, [appId]: 'saving' }));
+    try {
+      await applicationsApi.setFeedback(appId, feedback);
+      setFeedbackStatus((prev) => ({ ...prev, [appId]: 'saved' }));
+    } catch {
+      setFeedbackStatus((prev) => ({ ...prev, [appId]: 'error' }));
+    }
   };
 
   if (loading) return <p className="loading-text">Cargando postulantes…</p>;
@@ -98,6 +129,21 @@ export function OpportunityApplicantsPage() {
       <h1>Postulantes</h1>
 
       {error && <p className="form-error" role="alert">{error}</p>}
+
+      {isDisponible && (
+        <div className="info-banner" style={{ marginBottom: 16 }}>
+          <p>Las postulaciones están abiertas. Puedes ver los postulantes, pero para seleccionarlos primero debes cerrar las postulaciones.</p>
+          <button
+            className="btn btn-secondary btn-sm"
+            style={{ marginTop: 8 }}
+            onClick={() => void handleCloseApplications()}
+            disabled={submitting}
+            data-testid="btn-close-applications"
+          >
+            {submitting ? 'Cerrando…' : 'Cerrar postulaciones'}
+          </button>
+        </div>
+      )}
 
       {applications.length === 0 && (
         <p className="loading-text">No hay postulantes para esta oportunidad.</p>
@@ -146,10 +192,21 @@ export function OpportunityApplicantsPage() {
                 className="btn btn-secondary btn-sm"
                 style={{ marginTop: 4 }}
                 onClick={() => void handleSaveFeedback(app.id)}
+                disabled={feedbackStatus[app.id] === 'saving'}
                 data-testid={`btn-save-feedback-${app.id}`}
               >
-                Guardar feedback
+                {feedbackStatus[app.id] === 'saving' ? 'Guardando…' : 'Guardar feedback'}
               </button>
+              {feedbackStatus[app.id] === 'saved' && (
+                <span className="form-success" role="status" data-testid={`feedback-saved-${app.id}`}>
+                  {' '}Feedback guardado.
+                </span>
+              )}
+              {feedbackStatus[app.id] === 'error' && (
+                <span className="form-error" role="alert" data-testid={`feedback-error-${app.id}`}>
+                  {' '}Error al guardar el feedback.
+                </span>
+              )}
             </div>
           )}
         </div>

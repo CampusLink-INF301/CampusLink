@@ -2,6 +2,29 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { OpportunityForm } from './OpportunityForm';
 
 describe('OpportunityForm', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('only shows allowed types for estudiante role', () => {
+    localStorage.setItem('user', JSON.stringify({ id: 'u1', role: 'estudiante' }));
+    render(<OpportunityForm onSubmit={jest.fn()} />);
+
+    const options = screen.getAllByRole('option').map((o) => o.textContent);
+    expect(options).toEqual(['Ayudantía', 'Grupo de Estudio', 'Tutoría']);
+    expect(options).not.toContain('Trabajo Part-time');
+    expect(options).not.toContain('Práctica');
+    expect(options).not.toContain('Otro');
+  });
+
+  it('only shows allowed types for institucion role', () => {
+    localStorage.setItem('user', JSON.stringify({ id: 'u1', role: 'institucion' }));
+    render(<OpportunityForm onSubmit={jest.fn()} />);
+
+    const options = screen.getAllByRole('option').map((o) => o.textContent);
+    expect(options).toEqual(['Práctica', 'Voluntariado', 'Trabajo Part-time']);
+  });
+
   it('submits payload with the current form state', async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
     render(<OpportunityForm onSubmit={onSubmit} submitLabel="Publicar" />);

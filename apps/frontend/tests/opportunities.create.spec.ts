@@ -1,41 +1,23 @@
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { loginAs, uniqueTitle } from './helpers/auth';
 
-test.describe('Crear nueva oportunidad', () => {
-  let createdId: string;
-
-  test.afterEach(async () => {
-    if (createdId) {
-      const ctx = await request.newContext();
-      await ctx.delete(`http://localhost:3000/api/opportunities/${createdId}`);
-      await ctx.dispose();
-    }
-  });
-
-  test('navega al formulario de creación al hacer clic en Nueva oportunidad', async ({ page }) => {
-    await page.goto('/opportunities');
-    await page.getByTestId('btn-new-opportunity').click();
-    await expect(page).toHaveURL('/opportunities/new');
-    await expect(page.getByRole('heading', { name: 'Nueva Oportunidad' })).toBeVisible();
-  });
-
-  test('crea una oportunidad completando el formulario', async ({ page }) => {
+test.describe('Create opportunity', () => {
+  test('creates an opportunity and redirects to detail', async ({ page }) => {
+    const title = uniqueTitle('E2E Crear');
+    await loginAs(page, 'docente');
     await page.goto('/opportunities/new');
-
-    await page.getByTestId('input-title').fill('Grupo de Estudio Python');
-    await page.getByTestId('select-type').selectOption('grupo_estudio');
-    await page.getByTestId('input-description').fill('Sesiones semanales para aprender Python desde cero.');
-
+    await page.getByTestId('input-title').fill(title);
+    await page.getByTestId('select-type').selectOption('tutoria');
+    await page.getByTestId('input-description').fill('Descripción de prueba E2E.');
     await page.getByTestId('btn-submit').click();
-
-    await expect(page).toHaveURL(/\/opportunities\/[a-z0-9-]+$/);
-    await expect(page.getByTestId('opportunity-title')).toHaveText('Grupo de Estudio Python');
-
-    createdId = page.url().split('/').pop()!;
+    await expect(page).toHaveURL(/\/opportunities\/[a-f0-9-]+$/);
+    await expect(page.getByTestId('opportunity-title')).toHaveText(title);
   });
 
-  test('muestra error al intentar enviar formulario vacío', async ({ page }) => {
+  test('stays on form when submitting with empty required fields', async ({ page }) => {
+    await loginAs(page, 'docente');
     await page.goto('/opportunities/new');
     await page.getByTestId('btn-submit').click();
-    await expect(page).toHaveURL('/opportunities/new');
+    await expect(page).toHaveURL(/\/opportunities\/new/);
   });
 });

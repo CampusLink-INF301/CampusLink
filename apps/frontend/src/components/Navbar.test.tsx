@@ -59,6 +59,19 @@ describe('Navbar', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/login');
   });
 
+  it('shows publisher links for estudiante role', async () => {
+    localStorage.setItem('token', 'token');
+    localStorage.setItem('user', JSON.stringify({ id: 'u1', role: 'estudiante' }));
+    mockedNotificationsApi.getUnreadCount.mockResolvedValue(0 as never);
+
+    renderNavbar();
+
+    await waitFor(() =>
+      expect(screen.getByText('+ Publicar')).toBeInTheDocument(),
+    );
+    expect(screen.getByText('Mis oportunidades')).toBeInTheDocument();
+  });
+
   it('renders admin links without fetching unread notifications', () => {
     localStorage.setItem('token', 'token');
     localStorage.setItem('user', JSON.stringify({ id: 'u1', role: 'admin' }));

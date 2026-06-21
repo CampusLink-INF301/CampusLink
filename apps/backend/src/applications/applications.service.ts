@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { Application, ApplicationStatus } from './entities/application.entity';
+import { Message } from './entities/message.entity';
 import {
   Opportunity,
   OpportunityStatus,
@@ -18,6 +19,7 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { FinalizeOpportunityDto } from './dto/finalize-opportunity.dto';
 import { FeedbackDto } from './dto/feedback.dto';
 import { QueryApplicationDto } from './dto/query-application.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import { normalizeSearch } from '../common/util/text';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/entities/notification.entity';
@@ -29,17 +31,24 @@ export class ApplicationsService {
     private readonly repo: Repository<Application>,
     @InjectRepository(Opportunity)
     private readonly opportunityRepo: Repository<Opportunity>,
+    @InjectRepository(Message)
+    private readonly messageRepo: Repository<Message>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly notificationsService: NotificationsService,
   ) {}
 
   async apply(userId: string, dto: CreateApplicationDto): Promise<Application> {
-    const opportunity = await this.opportunityRepo.findOneBy({
-      id: dto.opportunityId,
+    const opportunity = await this.opportunityRepo.findOne({
+      where: { id: dto.opportunityId },
+      relations: ['publisher'],
     });
     if (!opportunity)
       throw new NotFoundException(`Opportunity ${dto.opportunityId} not found`);
+
+    if (opportunity.publisher?.id === userId) {
+      throw new BadRequestException('No puedes postular a tu propia oportunidad');
+    }
 
     if (opportunity.status !== OpportunityStatus.DISPONIBLE) {
       throw new BadRequestException(
@@ -60,7 +69,16 @@ export class ApplicationsService {
       if (existing.status === ApplicationStatus.CANCELADO) {
         existing.status = ApplicationStatus.POSTULADO;
         existing.formResponses = dto.formResponses ?? null;
-        return this.repo.save(existing);
+        const saved = await this.repo.save(existing);
+        if (opportunity.publisher) {
+          await this.notificationsService.create(
+            opportunity.publisher.id,
+            NotificationType.APPLICATION_SUBMITTED,
+            `Nuevo postulante en "${opportunity.title}".`,
+            opportunity.id,
+          );
+        }
+        return saved;
       }
       throw new ConflictException('Ya has postulado a esta oportunidad');
     }
@@ -71,7 +89,16 @@ export class ApplicationsService {
         opportunity: { id: dto.opportunityId } as Opportunity,
         formResponses: dto.formResponses ?? null,
       });
-      return await this.repo.save(application);
+      const saved = await this.repo.save(application);
+      if (opportunity.publisher) {
+        await this.notificationsService.create(
+          opportunity.publisher.id,
+          NotificationType.APPLICATION_SUBMITTED,
+          `Nuevo postulante en "${opportunity.title}".`,
+          opportunity.id,
+        );
+      }
+      return saved;
     } catch (err) {
       if (
         err instanceof QueryFailedError &&
@@ -122,15 +149,10 @@ export class ApplicationsService {
       throw new NotFoundException(`Opportunity ${opportunityId} not found`);
     if (opportunity.publisher?.id !== requesterId)
       throw new ForbiddenException('No tienes permiso');
-    if (opportunity.status === OpportunityStatus.DISPONIBLE) {
-      throw new BadRequestException(
-        'La oportunidad debe haber cerrado antes de ver postulantes',
-      );
-    }
 
     return this.repo.find({
       where: { opportunity: { id: opportunityId } },
-      relations: ['user'],
+      relations: ['user', 'opportunity'],
       order: { createdAt: 'ASC' },
     });
   }
@@ -285,5 +307,96 @@ export class ApplicationsService {
     }
 
     return qb.getMany();
+  }
+
+  async getStats(userId: string): Promise<{
+    total: number;
+    aceptadas: number;
+    pendientes: number;
+    rechazadas: number;
+  }> {
+    const all = await this.repo.find({
+      where: { user: { id: userId } },
+      select: ['id', 'status'],
+    });
+    return {
+      total: all.length,
+      aceptadas: all.filter((a) => a.status === ApplicationStatus.ACEPTADO).length,
+      pendientes: all.filter(
+        (a) =>
+          a.status === ApplicationStatus.POSTULADO ||
+          a.status === ApplicationStatus.EN_EVALUACION,
+      ).length,
+      rechazadas: all.filter(
+        (a) => a.status === ApplicationStatus.NO_SELECCIONADO,
+      ).length,
+    };
+  }
+
+  async findOne(userId: string, applicationId: string): Promise<Application> {
+    const application = await this.repo.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'opportunity', 'opportunity.publisher'],
+    });
+    if (!application) throw new NotFoundException('Application not found');
+
+    const isApplicant = application.user.id === userId;
+    const isPublisher = application.opportunity.publisher?.id === userId;
+    if (!isApplicant && !isPublisher) throw new ForbiddenException('No tienes permiso');
+
+    return application;
+  }
+
+  async getMessages(userId: string, applicationId: string): Promise<Message[]> {
+    const application = await this.repo.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'opportunity', 'opportunity.publisher'],
+    });
+    if (!application) throw new NotFoundException('Application not found');
+
+    const isApplicant = application.user.id === userId;
+    const isPublisher = application.opportunity.publisher?.id === userId;
+    if (!isApplicant && !isPublisher) throw new ForbiddenException('No tienes permiso');
+
+    if (application.status !== ApplicationStatus.ACEPTADO) {
+      throw new BadRequestException(
+        'El chat solo está disponible para postulaciones aceptadas',
+      );
+    }
+
+    return this.messageRepo.find({
+      where: { application: { id: applicationId } },
+      relations: ['sender'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async sendMessage(
+    userId: string,
+    applicationId: string,
+    dto: CreateMessageDto,
+  ): Promise<Message> {
+    const application = await this.repo.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'opportunity', 'opportunity.publisher'],
+    });
+    if (!application) throw new NotFoundException('Application not found');
+
+    const isApplicant = application.user.id === userId;
+    const isPublisher = application.opportunity.publisher?.id === userId;
+    if (!isApplicant && !isPublisher) throw new ForbiddenException('No tienes permiso');
+
+    if (application.status !== ApplicationStatus.ACEPTADO) {
+      throw new BadRequestException(
+        'El chat solo está disponible para postulaciones aceptadas',
+      );
+    }
+
+    const message = this.messageRepo.create({
+      application: { id: applicationId } as Application,
+      sender: { id: userId } as User,
+      content: dto.content,
+    });
+    return this.messageRepo.save(message);
   }
 }

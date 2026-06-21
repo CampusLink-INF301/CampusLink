@@ -9,8 +9,11 @@ export function Navbar() {
   const currentUser: { id: string; role: string } | null = storedUser
     ? JSON.parse(storedUser)
     : null;
+  const isStudent = currentUser?.role === 'estudiante';
   const isPublisher =
-    currentUser?.role === 'docente' || currentUser?.role === 'institucion';
+    currentUser?.role === 'docente' ||
+    currentUser?.role === 'institucion' ||
+    currentUser?.role === 'estudiante';
   const isAdmin = currentUser?.role === 'admin';
 
   const [unreadCount, setUnreadCount] = useState(0);
@@ -59,6 +62,13 @@ export function Navbar() {
             )}
             {!isAdmin && (
               <>
+                {isStudent && (
+                  <Link to="/saved" className="nav-link nav-link-saved" title="Guardados">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+                    </svg>
+                  </Link>
+                )}
                 <Link to="/notifications" className="nav-link nav-link-bell">
                   🔔
                   {unreadCount > 0 && (

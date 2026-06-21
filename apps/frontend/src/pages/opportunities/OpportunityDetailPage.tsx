@@ -22,6 +22,7 @@ export function OpportunityDetailPage() {
   const currentUser: { id: string; role: string } | null = storedUser ? JSON.parse(storedUser) : null;
   const isLoggedIn = !!localStorage.getItem('token');
   const isStudent = currentUser?.role === 'estudiante';
+  const isOwner = !!(currentUser?.id && opportunity?.publisher?.id === currentUser.id);
 
   useEffect(() => {
     if (!id) return;
@@ -133,7 +134,7 @@ export function OpportunityDetailPage() {
         )}
 
         <div className="detail-actions">
-          {isLoggedIn && isStudent && (
+          {isLoggedIn && isStudent && !isOwner && (
             <div>
               {!isDisponible ? (
                 <p className="form-info" data-testid="apply-unavailable">

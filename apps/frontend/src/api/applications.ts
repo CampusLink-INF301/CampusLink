@@ -9,6 +9,13 @@ export interface ApplicationQuery {
   status?: ApplicationStatus;
 }
 
+export interface ApplicationStats {
+  total: number;
+  aceptadas: number;
+  pendientes: number;
+  rechazadas: number;
+}
+
 export const applicationsApi = {
   apply: (opportunityId: string, formResponses?: Record<string, string | string[]>) =>
     client.post<Application>('/applications', { opportunityId, formResponses }).then((r) => r.data),
@@ -16,6 +23,8 @@ export const applicationsApi = {
     client.delete(`/applications/${id}`).then((r) => r.data),
   getMine: (params?: ApplicationQuery) =>
     client.get<Application[]>('/applications/mine', { params }).then((r) => r.data),
+  getStats: () =>
+    client.get<ApplicationStats>('/applications/mine/stats').then((r) => r.data),
   getByOpportunity: (opportunityId: string) =>
     client.get<Application[]>(`/applications/by-opportunity/${opportunityId}`).then((r) => r.data),
   finalize: (opportunityId: string, acceptedApplicationIds: string[]) =>

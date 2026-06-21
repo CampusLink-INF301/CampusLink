@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
 import { Application, ApplicationStatus } from './entities/application.entity';
+import { Message } from './entities/message.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   Opportunity,
@@ -33,8 +34,13 @@ const mockAppRepo = {
   createQueryBuilder: jest.fn().mockReturnValue(mockAppQbChain),
 };
 
+const mockMessageRepo = {
+  find: jest.fn(),
+  create: jest.fn(),
+  save: jest.fn(),
+};
+
 const mockOpportunityRepo = {
-  findOneBy: jest.fn(),
   findOne: jest.fn(),
 };
 
@@ -112,6 +118,7 @@ describe('ApplicationsService', () => {
       providers: [
         ApplicationsService,
         { provide: getRepositoryToken(Application), useValue: mockAppRepo },
+        { provide: getRepositoryToken(Message), useValue: mockMessageRepo },
         {
           provide: getRepositoryToken(Opportunity),
           useValue: mockOpportunityRepo,
@@ -126,7 +133,7 @@ describe('ApplicationsService', () => {
 
   describe('apply', () => {
     it('creates a new application', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(null);
       mockAppRepo.create.mockReturnValue(baseApplication);
       mockAppRepo.save.mockResolvedValue(baseApplication);
@@ -142,7 +149,7 @@ describe('ApplicationsService', () => {
     });
 
     it('throws NotFoundException when opportunity does not exist', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue(null);
+      mockOpportunityRepo.findOne.mockResolvedValue(null);
 
       await expect(
         service.apply('user-2', { opportunityId: 'no-existe' }),
@@ -150,7 +157,7 @@ describe('ApplicationsService', () => {
     });
 
     it('throws BadRequestException when opportunity is not DISPONIBLE', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue({
+      mockOpportunityRepo.findOne.mockResolvedValue({
         ...baseOpportunity,
         status: OpportunityStatus.EN_EVALUACION,
       });
@@ -161,7 +168,7 @@ describe('ApplicationsService', () => {
     });
 
     it('throws BadRequestException when deadline has passed', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue({
+      mockOpportunityRepo.findOne.mockResolvedValue({
         ...baseOpportunity,
         deadline: pastDeadline,
       });
@@ -172,7 +179,7 @@ describe('ApplicationsService', () => {
     });
 
     it('throws ConflictException when already applied (active)', async () => {
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(baseApplication);
 
       await expect(
@@ -185,7 +192,7 @@ describe('ApplicationsService', () => {
         ...baseApplication,
         status: ApplicationStatus.CANCELADO,
       };
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(cancelled);
       mockAppRepo.save.mockResolvedValue({
         ...cancelled,
@@ -288,12 +295,13 @@ describe('ApplicationsService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('throws BadRequestException when opportunity is DISPONIBLE', async () => {
+    it('returns applications for publisher when opportunity is DISPONIBLE', async () => {
       mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
+      mockAppRepo.find.mockResolvedValue([baseApplication]);
 
-      await expect(
-        service.findByOpportunity('opp-1', 'user-1'),
-      ).rejects.toThrow(BadRequestException);
+      const result = await service.findByOpportunity('opp-1', 'user-1');
+
+      expect(result).toEqual([baseApplication]);
     });
   });
 
@@ -458,7 +466,7 @@ describe('ApplicationsService', () => {
   describe('state machine — postular → cancelar → re-postular', () => {
     it('full lifecycle: apply, cancel, reactivate', async () => {
       // Step 1: apply
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(null);
       mockAppRepo.create.mockReturnValue(baseApplication);
       mockAppRepo.save.mockResolvedValue(baseApplication);
@@ -481,7 +489,7 @@ describe('ApplicationsService', () => {
         ...baseApplication,
         status: ApplicationStatus.CANCELADO,
       };
-      mockOpportunityRepo.findOneBy.mockResolvedValue(baseOpportunity);
+      mockOpportunityRepo.findOne.mockResolvedValue(baseOpportunity);
       mockAppRepo.findOne.mockResolvedValue(cancelledApp);
       mockAppRepo.save.mockResolvedValue({
         ...cancelledApp,
@@ -532,6 +540,142 @@ describe('ApplicationsService', () => {
         { id: 'opp-1' },
         { status: OpportunityStatus.FINALIZADO },
       );
+    });
+  });
+
+  describe('getStats', () => {
+    it('counts applications by status correctly', async () => {
+      mockAppRepo.find.mockResolvedValue([
+        { ...baseApplication, status: ApplicationStatus.ACEPTADO },
+        { ...baseApplication, status: ApplicationStatus.POSTULADO },
+        { ...baseApplication, status: ApplicationStatus.EN_EVALUACION },
+        { ...baseApplication, status: ApplicationStatus.NO_SELECCIONADO },
+        { ...baseApplication, status: ApplicationStatus.CANCELADO },
+      ] as never);
+
+      const result = await service.getStats('user-2');
+
+      expect(result).toEqual({
+        total: 5,
+        aceptadas: 1,
+        pendientes: 2,
+        rechazadas: 1,
+      });
+    });
+
+    it('returns zeros when user has no applications', async () => {
+      mockAppRepo.find.mockResolvedValue([] as never);
+
+      const result = await service.getStats('user-2');
+
+      expect(result).toEqual({
+        total: 0,
+        aceptadas: 0,
+        pendientes: 0,
+        rechazadas: 0,
+      });
+    });
+  });
+
+  describe('getMessages', () => {
+    const acceptedApplication = {
+      ...baseApplication,
+      status: ApplicationStatus.ACEPTADO,
+    };
+
+    const baseMessage = {
+      id: 'msg-1',
+      content: 'Hola',
+      createdAt: new Date(),
+      sender: student,
+      application: acceptedApplication,
+    };
+
+    it('throws ForbiddenException for a non-participant user', async () => {
+      mockAppRepo.findOne.mockResolvedValue(acceptedApplication);
+
+      await expect(service.getMessages('other-user', 'app-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('throws BadRequestException when application status is not ACEPTADO', async () => {
+      mockAppRepo.findOne.mockResolvedValue({ ...baseApplication });
+
+      await expect(service.getMessages('user-2', 'app-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('returns messages for an accepted application (applicant)', async () => {
+      mockAppRepo.findOne.mockResolvedValue(acceptedApplication);
+      mockMessageRepo.find.mockResolvedValue([baseMessage] as never);
+
+      const result = await service.getMessages('user-2', 'app-1');
+
+      expect(mockMessageRepo.find).toHaveBeenCalledWith({
+        where: { application: { id: 'app-1' } },
+        relations: ['sender'],
+        order: { createdAt: 'ASC' },
+      });
+      expect(result).toEqual([baseMessage]);
+    });
+
+    it('returns messages for an accepted application (publisher)', async () => {
+      mockAppRepo.findOne.mockResolvedValue(acceptedApplication);
+      mockMessageRepo.find.mockResolvedValue([baseMessage] as never);
+
+      const result = await service.getMessages('user-1', 'app-1');
+
+      expect(result).toEqual([baseMessage]);
+    });
+  });
+
+  describe('sendMessage', () => {
+    const acceptedApplication = {
+      ...baseApplication,
+      status: ApplicationStatus.ACEPTADO,
+    };
+
+    const createdMessage = {
+      id: 'msg-new',
+      content: 'Nuevo mensaje',
+      createdAt: new Date(),
+      sender: student,
+      application: acceptedApplication,
+    };
+
+    it('throws ForbiddenException for a non-participant user', async () => {
+      mockAppRepo.findOne.mockResolvedValue(acceptedApplication);
+
+      await expect(
+        service.sendMessage('other-user', 'app-1', { content: 'Hola' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws BadRequestException when application is not ACEPTADO', async () => {
+      mockAppRepo.findOne.mockResolvedValue({ ...baseApplication });
+
+      await expect(
+        service.sendMessage('user-2', 'app-1', { content: 'Hola' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('creates and returns a new message', async () => {
+      mockAppRepo.findOne.mockResolvedValue(acceptedApplication);
+      mockMessageRepo.create.mockReturnValue(createdMessage);
+      mockMessageRepo.save.mockResolvedValue(createdMessage as never);
+
+      const result = await service.sendMessage('user-2', 'app-1', {
+        content: 'Nuevo mensaje',
+      });
+
+      expect(mockMessageRepo.create).toHaveBeenCalledWith({
+        application: { id: 'app-1' },
+        sender: { id: 'user-2' },
+        content: 'Nuevo mensaje',
+      });
+      expect(result).toEqual(createdMessage);
     });
   });
 });

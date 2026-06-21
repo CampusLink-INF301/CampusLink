@@ -85,4 +85,21 @@ describe('OpportunityCard', () => {
     const editLink = screen.getByLabelText('Editar oportunidad').closest('a');
     expect(editLink).toHaveAttribute('href', '/opportunities/uuid-1/edit');
   });
+
+  it('renders clone button when user is the owner and onClone is provided', () => {
+    renderCard({ currentUserId: OWNER_ID, onClone: jest.fn() });
+    expect(screen.getByLabelText('Clonar oportunidad')).toBeInTheDocument();
+  });
+
+  it('calls onClone with the opportunity id when owner clicks clone', () => {
+    const onClone = jest.fn();
+    renderCard({ currentUserId: OWNER_ID, onClone });
+    fireEvent.click(screen.getByLabelText('Clonar oportunidad'));
+    expect(onClone).toHaveBeenCalledWith('uuid-1');
+  });
+
+  it('does not render clone button when onClone is not provided', () => {
+    renderCard({ currentUserId: OWNER_ID });
+    expect(screen.queryByLabelText('Clonar oportunidad')).not.toBeInTheDocument();
+  });
 });

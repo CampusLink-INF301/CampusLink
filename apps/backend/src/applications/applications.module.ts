@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Application } from './entities/application.entity';
+import { Message } from './entities/message.entity';
 import { Opportunity } from '../opportunities/entities/opportunity.entity';
 import { User } from '../auth/entities/user.entity';
 import { ApplicationsService } from './applications.service';
@@ -9,7 +10,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Application, Opportunity, User]),
+    TypeOrmModule.forFeature([Application, Message, Opportunity, User]),
     NotificationsModule,
   ],
   providers: [ApplicationsService],

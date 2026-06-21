@@ -12,6 +12,8 @@ import { OpportunityApplicantsPage } from './pages/opportunities/OpportunityAppl
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminOpportunitiesPage } from './pages/admin/AdminOpportunitiesPage';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
+import { SavedPage } from './pages/saved/SavedPage';
+import { ApplicationChatPage } from './pages/applications/ApplicationChatPage';
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/opportunities" element={<AdminOpportunitiesPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/saved" element={<SavedPage />} />
+        <Route path="/applications/:id/chat" element={<ApplicationChatPage />} />
       </Routes>
     </BrowserRouter>
   );
