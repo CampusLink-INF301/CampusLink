@@ -31,7 +31,7 @@ describe('FormFieldBuilder', () => {
     const field = { id: 'f1', label: 'Pregunta', type: 'text_short', required: false };
     const { onChange } = renderBuilder([field]);
 
-    fireEvent.change(screen.getByPlaceholderText(/etiqueta de la pregunta/i), {
+    fireEvent.change(screen.getByPlaceholderText(/escribe la pregunta/i), {
       target: { value: 'Nueva pregunta' },
     });
     fireEvent.click(screen.getByRole('checkbox'));
@@ -58,7 +58,7 @@ describe('FormFieldBuilder', () => {
     fireEvent.change(screen.getByPlaceholderText(/nueva opción/i), {
       target: { value: 'B' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /\+ opción/i }));
+    fireEvent.click(screen.getByRole('button', { name: /opción/i }));
 
     expect(onChange).toHaveBeenLastCalledWith([
       expect.objectContaining({ options: ['A', 'B'] }),
@@ -79,7 +79,7 @@ describe('FormFieldBuilder', () => {
       expect.objectContaining({ id: 'f1' }),
     ]);
 
-    fireEvent.click(screen.getAllByTitle('Eliminar')[0]);
+    fireEvent.click(screen.getAllByTitle('Eliminar pregunta')[0]);
     expect(onChange).toHaveBeenCalledWith([expect.objectContaining({ id: 'f2' })]);
   });
 
@@ -94,10 +94,10 @@ describe('FormFieldBuilder', () => {
     };
     render(<FormFieldBuilder fields={[field] as never} onChange={onChange} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /\+ opción/i }));
+    fireEvent.click(screen.getByRole('button', { name: /opción/i }));
     expect(onChange).not.toHaveBeenCalled();
 
-    const chip = screen.getByText('A').closest('.option-chip');
+    const chip = screen.getByText('A').closest('.fb-chip');
     expect(chip).not.toBeNull();
     fireEvent.click(within(chip as HTMLElement).getByRole('button'));
     expect(onChange).toHaveBeenCalledWith([
