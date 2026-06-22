@@ -13,6 +13,8 @@ import {
   OpportunityType,
 } from '../../types/opportunity';
 import type { Application } from '../../types/application';
+import { ConfirmModal } from '../../components/ConfirmModal';
+import { useConfirm } from '../../hooks/useConfirm';
 
 interface AppStats {
   total: number;
@@ -57,6 +59,7 @@ export function ProfilePage() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<OpportunityType | ''>('');
   const [filterStatus, setFilterStatus] = useState<ApplicationStatus | ''>('');
+  const { confirm, confirmProps } = useConfirm();
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
@@ -89,6 +92,9 @@ export function ProfilePage() {
   }, []);
 
   useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const role = storedUser ? (JSON.parse(storedUser) as { role: string }).role : null;
+    if (role !== 'estudiante') return;
     applicationsApi
       .getMine({
         search: search || undefined,
@@ -103,7 +109,8 @@ export function ProfilePage() {
   }, [search, filterType, filterStatus]);
 
   const handleCancelApplication = async (id: string) => {
-    if (!confirm('¿Cancelar esta postulación?')) return;
+    const ok = await confirm({ title: 'Cancelar postulación', message: '¿Estás seguro de que deseas cancelar esta postulación? No podrás deshacerlo.', confirmLabel: 'Sí, cancelar', variant: 'danger' });
+    if (!ok) return;
     await applicationsApi.cancel(id);
     setApplications((prev) =>
       prev.map((a) =>
@@ -387,6 +394,7 @@ export function ProfilePage() {
           })}
         </div>
       )}
+      <ConfirmModal {...confirmProps} />
     </main>
   );
 }

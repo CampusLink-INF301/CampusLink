@@ -35,8 +35,10 @@ const mockApp = {
 beforeEach(() => {
   jest.clearAllMocks();
   localStorage.setItem('token', 'fake-token');
+  localStorage.setItem('user', JSON.stringify(mockUser));
   mockedAuthApi.getMe.mockResolvedValue(mockUser as never);
   mockedAppsApi.getMine.mockResolvedValue([mockApp] as never);
+  mockedAppsApi.getStats.mockResolvedValue({ total: 1, aceptadas: 0, pendientes: 1, rechazadas: 0 } as never);
 });
 
 afterEach(() => {

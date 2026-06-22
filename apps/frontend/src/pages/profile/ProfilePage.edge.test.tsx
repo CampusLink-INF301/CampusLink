@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ProfilePage } from './ProfilePage';
 import { authApi } from '../../api/auth';
@@ -95,24 +95,26 @@ describe('ProfilePage edge cases', () => {
   });
 
   it('cancels an application and updates the status badge', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-
     renderPage();
 
     await waitFor(() => expect(screen.getByTestId('btn-cancel-application')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('btn-cancel-application'));
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'));
+    fireEvent.click(within(dialog).getByRole('button', { name: /sí, cancelar/i }));
 
     await waitFor(() => expect(mockedAppsApi.cancel).toHaveBeenCalledWith('app-1'));
     await waitFor(() => expect(screen.getByTestId('application-status')).toHaveTextContent('Cancelado'));
   });
 
   it('does not cancel when the confirmation dialog is rejected', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(false);
-
     renderPage();
 
     await waitFor(() => expect(screen.getByTestId('btn-cancel-application')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('btn-cancel-application'));
+
+    const dialog2 = await waitFor(() => screen.getByRole('dialog'));
+    fireEvent.click(within(dialog2).getByRole('button', { name: /^cancelar$/i }));
 
     expect(mockedAppsApi.cancel).not.toHaveBeenCalled();
   });
