@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { FormField } from '../types/opportunity';
 import { FORM_FIELD_TYPE_LABELS } from '../types/opportunity';
 
@@ -7,7 +8,7 @@ interface Props {
   onChange: (responses: Record<string, string | string[]>) => void;
 }
 
-const FieldTypeIcons: Record<string, JSX.Element> = {
+const FieldTypeIcons: Record<string, ReactNode> = {
   text_short: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>

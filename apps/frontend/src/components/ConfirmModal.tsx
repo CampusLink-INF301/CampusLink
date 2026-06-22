@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 
 export type ConfirmVariant = 'danger' | 'warning' | 'info';
@@ -13,7 +14,7 @@ interface ConfirmModalProps {
   onCancel: () => void;
 }
 
-const VariantIcons: Record<ConfirmVariant, JSX.Element> = {
+const VariantIcons: Record<ConfirmVariant, ReactNode> = {
   danger: (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
