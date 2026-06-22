@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { OpportunityApplicantsPage } from './OpportunityApplicantsPage';
 import { applicationsApi } from '../../api/applications';
@@ -60,8 +60,6 @@ beforeEach(() => {
 
 describe('OpportunityApplicantsPage', () => {
   it('allows selecting applicants and finalizing', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-
     render(
       <MemoryRouter initialEntries={['/my-opportunities/opp-1/applicants']}>
         <Routes>
@@ -73,6 +71,9 @@ describe('OpportunityApplicantsPage', () => {
     await waitFor(() => expect(screen.getByTestId('chk-app-1')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('chk-app-1'));
     fireEvent.click(screen.getByTestId('btn-finalize'));
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'));
+    fireEvent.click(within(dialog).getByRole('button', { name: /finalizar/i }));
 
     await waitFor(() => expect(mockedApi.finalize).toHaveBeenCalledWith('opp-1', ['app-1']));
   });

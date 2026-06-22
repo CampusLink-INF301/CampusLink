@@ -6,6 +6,8 @@ import { APPLICATION_STATUS_LABELS, ApplicationStatus } from '../../types/applic
 import { OpportunityStatus } from '../../types/opportunity';
 import type { Application } from '../../types/application';
 import type { FormField } from '../../types/opportunity';
+import { ConfirmModal } from '../../components/ConfirmModal';
+import { useConfirm } from '../../hooks/useConfirm';
 
 function FormResponsesView({
   fields,
@@ -43,6 +45,7 @@ export function OpportunityApplicantsPage() {
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
+  const { confirm, confirmProps } = useConfirm();
 
   useEffect(() => {
     if (!id) return;
@@ -82,7 +85,9 @@ export function OpportunityApplicantsPage() {
   };
 
   const handleFinalize = async () => {
-    if (!id || !confirm('¿Finalizar la selección? Esta acción no se puede deshacer.')) return;
+    if (!id) return;
+    const ok = await confirm({ title: 'Finalizar selección', message: 'Los postulantes seleccionados serán aceptados y el resto será marcado como no seleccionado. Esta acción no se puede deshacer.', confirmLabel: 'Finalizar', variant: 'warning' });
+    if (!ok) return;
     setSubmitting(true);
     try {
       await applicationsApi.finalize(id, Array.from(selected));
@@ -96,7 +101,9 @@ export function OpportunityApplicantsPage() {
   };
 
   const handleCloseApplications = async () => {
-    if (!id || !confirm('¿Cerrar las postulaciones? No se podrán recibir nuevas postulaciones.')) return;
+    if (!id) return;
+    const ok = await confirm({ title: 'Cerrar postulaciones', message: 'No se podrán recibir nuevas postulaciones. Los postulantes actuales pasarán a evaluación.', confirmLabel: 'Cerrar postulaciones', variant: 'info' });
+    if (!ok) return;
     setSubmitting(true);
     try {
       await opportunitiesApi.closeApplications(id);
@@ -149,8 +156,22 @@ export function OpportunityApplicantsPage() {
         <p className="loading-text">No hay postulantes para esta oportunidad.</p>
       )}
 
-      {applications.map((app) => (
-        <div key={app.id} className="card" data-testid="applicant-item">
+      {applications.map((app) => {
+        const borderColor = app.status === ApplicationStatus.ACEPTADO
+          ? '#10B981'
+          : app.status === ApplicationStatus.NO_SELECCIONADO
+            ? '#94A3B8'
+            : undefined;
+        const bgColor = app.status === ApplicationStatus.ACEPTADO
+          ? '#F0FDF4'
+          : app.status === ApplicationStatus.NO_SELECCIONADO
+            ? '#F8FAFC'
+            : undefined;
+        return (
+        <div key={app.id} className="card" data-testid="applicant-item" style={{
+          borderLeft: borderColor ? `4px solid ${borderColor}` : undefined,
+          background: bgColor,
+        }}>
           <div className="card-row">
             <div className="card-content">
               <strong>{app.user?.name ?? 'Desconocido'}</strong>
@@ -161,14 +182,22 @@ export function OpportunityApplicantsPage() {
             </div>
             {isEnEvaluacion && (
               <div className="card-actions">
-                <label>
+                <label className={`select-toggle${selected.has(app.id) ? ' select-toggle--active' : ''}`}>
                   <input
                     type="checkbox"
                     checked={selected.has(app.id)}
                     onChange={() => toggleSelect(app.id)}
                     data-testid={`chk-${app.id}`}
+                    className="select-toggle-input"
                   />
-                  {' '}Seleccionar
+                  <span className="select-toggle-check">
+                    {selected.has(app.id) && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6 9 17l-5-5"/>
+                      </svg>
+                    )}
+                  </span>
+                  <span>{selected.has(app.id) ? 'Seleccionado' : 'Seleccionar'}</span>
                 </label>
               </div>
             )}
@@ -176,6 +205,19 @@ export function OpportunityApplicantsPage() {
 
           {formFields.length > 0 && (
             <FormResponsesView fields={formFields} responses={app.formResponses} />
+          )}
+
+          {app.status === ApplicationStatus.ACEPTADO && (
+            <Link
+              to={`/applications/${app.id}/chat`}
+              className="btn btn-secondary btn-sm"
+              style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Abrir chat
+            </Link>
           )}
 
           {isFinalized && (
@@ -210,7 +252,8 @@ export function OpportunityApplicantsPage() {
             </div>
           )}
         </div>
-      ))}
+      );
+      })}
 
       {isEnEvaluacion && (
         <button
@@ -223,6 +266,7 @@ export function OpportunityApplicantsPage() {
           {submitting ? 'Finalizando…' : 'Finalizar selección'}
         </button>
       )}
+      <ConfirmModal {...confirmProps} />
     </main>
   );
 }

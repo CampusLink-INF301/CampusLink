@@ -1,8 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { messagesApi } from '../../api/messages';
+import { applicationsApi } from '../../api/applications';
 import type { Message } from '../../api/messages';
 import axios from 'axios';
+
+const ROLE_LABELS: Record<string, string> = {
+  estudiante: 'Estudiante',
+  docente: 'Docente',
+  institucion: 'Institución',
+  admin: 'Administrador',
+};
+
+interface ChatPartner {
+  name: string;
+  role: string;
+  opportunityTitle: string;
+}
 
 export function ApplicationChatPage() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +26,7 @@ export function ApplicationChatPage() {
   const [error, setError] = useState('');
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [partner, setPartner] = useState<ChatPartner | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const storedUser = localStorage.getItem('user');
@@ -22,6 +37,16 @@ export function ApplicationChatPage() {
   useEffect(() => {
     if (!localStorage.getItem('token')) { navigate('/login'); return; }
     if (!id) return;
+
+    applicationsApi.getOne(id).then((app) => {
+      const isApplicant = app.user?.id === currentUser?.id;
+      const pub = app.opportunity?.publisher;
+      if (isApplicant && pub) {
+        setPartner({ name: pub.name, role: pub.role, opportunityTitle: app.opportunity.title });
+      } else if (app.user) {
+        setPartner({ name: app.user.name, role: 'estudiante', opportunityTitle: app.opportunity.title });
+      }
+    }).catch(() => {});
 
     messagesApi
       .getMessages(id)
@@ -64,9 +89,22 @@ export function ApplicationChatPage() {
     <main className="page">
       <div className="page-header">
         <Link to="/profile" className="btn btn-secondary btn-sm">
-          ← Volver a mi perfil
+          ← Volver
         </Link>
-        <h1>Chat de postulación</h1>
+        {partner && (
+          <div className="chat-partner-header">
+            <div className="chat-partner-avatar">
+              {partner.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="chat-partner-info">
+              <strong className="chat-partner-name">{partner.name}</strong>
+              <span className="chat-partner-meta">
+                {ROLE_LABELS[partner.role] ?? partner.role} &middot; {partner.opportunityTitle}
+              </span>
+            </div>
+          </div>
+        )}
+        {!partner && <h1>Chat de postulación</h1>}
       </div>
 
       {error ? (

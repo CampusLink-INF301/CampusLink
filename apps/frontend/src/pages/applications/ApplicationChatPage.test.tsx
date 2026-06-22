@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ApplicationChatPage } from './ApplicationChatPage';
 import { messagesApi } from '../../api/messages';
+import { applicationsApi } from '../../api/applications';
 import type { Message } from '../../api/messages';
 import axios from 'axios';
 
@@ -18,9 +19,11 @@ jest.mock('react-router-dom', () => {
 
 jest.mock('../../api/client');
 jest.mock('../../api/messages');
+jest.mock('../../api/applications');
 jest.mock('axios');
 
 const mockedMessagesApi = messagesApi as jest.Mocked<typeof messagesApi>;
+const mockedAppsApi = applicationsApi as jest.Mocked<typeof applicationsApi>;
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 const myMessage: Message = {
@@ -42,6 +45,13 @@ beforeEach(() => {
   localStorage.clear();
   localStorage.setItem('user', JSON.stringify({ id: 'u1', name: 'Yo' }));
   window.HTMLElement.prototype.scrollIntoView = jest.fn();
+  mockedAppsApi.getOne.mockResolvedValue({
+    id: 'app-123',
+    status: 'aceptado',
+    user: { id: 'u1', name: 'Yo', email: 'yo@test.cl' },
+    opportunity: { id: 'opp-1', title: 'Tutoria Python', publisher: { id: 'u2', name: 'Docente', role: 'docente' } },
+    createdAt: '2024-01-01T00:00:00Z',
+  } as never);
 });
 
 function renderPage() {
@@ -113,7 +123,7 @@ describe('ApplicationChatPage', () => {
     const bubbles = screen.getAllByTestId('chat-bubble');
     expect(bubbles[0]).toHaveClass('chat-bubble--me');
     expect(bubbles[1]).toHaveClass('chat-bubble--them');
-    expect(screen.getByText('Docente')).toBeInTheDocument();
+    expect(bubbles[1]).toHaveTextContent('Docente');
   });
 
   it('sends a message on form submit', async () => {

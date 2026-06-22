@@ -31,4 +31,6 @@ export const applicationsApi = {
     client.post(`/applications/finalize/${opportunityId}`, { acceptedApplicationIds }),
   setFeedback: (applicationId: string, feedback: string) =>
     client.put<Application>(`/applications/${applicationId}/feedback`, { feedback }).then((r) => r.data),
+  getOne: (id: string) =>
+    client.get<Application & { opportunity: { publisher?: { id: string; name: string; role: string } } }>(`/applications/${id}`).then((r) => r.data),
 };
