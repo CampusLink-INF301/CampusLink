@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { opportunitiesApi } from '../../api/opportunities';
 import { applicationsApi } from '../../api/applications';
 import { OPPORTUNITY_TYPE_LABELS, OPPORTUNITY_STATUS_LABELS, OpportunityStatus } from '../../types/opportunity';
+import { APPLICATION_STATUS_LABELS } from '../../types/application';
+import type { Application } from '../../types/application';
 import { DeadlineWarning } from '../../components/DeadlineWarning';
 import { FormFiller } from '../../components/FormFiller';
 import type { Opportunity, FormField } from '../../types/opportunity';
@@ -17,6 +19,7 @@ export function OpportunityDetailPage() {
   const [applyError, setApplyError] = useState('');
   const [expired, setExpired] = useState(false);
   const [formResponses, setFormResponses] = useState<Record<string, string | string[]>>({});
+  const [existingApp, setExistingApp] = useState<Application | null>(null);
 
   const storedUser = localStorage.getItem('user');
   const currentUser: { id: string; role: string } | null = storedUser ? JSON.parse(storedUser) : null;
@@ -29,6 +32,16 @@ export function OpportunityDetailPage() {
     opportunitiesApi.getById(id)
       .then(setOpportunity)
       .finally(() => setLoading(false));
+
+    if (isStudent && isLoggedIn) {
+      applicationsApi.getMine().then((apps) => {
+        const match = apps.find((a) => a.opportunity?.id === id);
+        if (match) {
+          setExistingApp(match);
+          setApplyStatus('done');
+        }
+      }).catch(() => {});
+    }
   }, [id]);
 
   const hasForm = (opp: Opportunity) =>
@@ -141,9 +154,30 @@ export function OpportunityDetailPage() {
                   Esta oportunidad ya no está disponible para postular.
                 </p>
               ) : applyStatus === 'done' ? (
-                <p className="form-success" data-testid="apply-success">
-                  ¡Postulación enviada exitosamente!
-                </p>
+                <div className="apply-status-card" data-testid="apply-success">
+                  <div className="apply-status-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6 9 17l-5-5"/>
+                    </svg>
+                  </div>
+                  <div className="apply-status-text">
+                    <strong>Ya postulaste a esta oportunidad</strong>
+                    {existingApp && (
+                      <span className="apply-status-detail">
+                        Estado: <span className={`badge badge-status-${existingApp.status}`}>
+                          {APPLICATION_STATUS_LABELS[existingApp.status]}
+                        </span>
+                        {existingApp.feedback && (
+                          <> &middot; <Link to="/profile">Ver feedback</Link></>
+                        )}
+                        {existingApp.status === 'aceptado' && (
+                          <> &middot; <Link to={`/applications/${existingApp.id}/chat`}>Ir al chat</Link></>
+                        )}
+                      </span>
+                    )}
+                    {!existingApp && <span>¡Postulación enviada exitosamente!</span>}
+                  </div>
+                </div>
               ) : applyStatus === 'filling' ? (
                 <form onSubmit={handleFormSubmit} className="apply-form">
                   <h3>Completa el formulario de postulación</h3>

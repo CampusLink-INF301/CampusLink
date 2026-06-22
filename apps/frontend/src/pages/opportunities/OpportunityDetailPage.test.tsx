@@ -47,6 +47,7 @@ beforeEach(() => {
     deadline: null,
   } as never);
   mockedAppsApi.apply.mockResolvedValue({ id: 'app-1' } as never);
+  mockedAppsApi.getMine.mockResolvedValue([] as never);
 });
 
 describe('OpportunityDetailPage', () => {

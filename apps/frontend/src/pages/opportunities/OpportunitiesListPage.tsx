@@ -1,10 +1,12 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { opportunitiesApi } from '../../api/opportunities';
+import { applicationsApi } from '../../api/applications';
 import { savedApi } from '../../api/saved';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import { SearchBar } from '../../components/SearchBar';
 import type { Opportunity, OpportunityType } from '../../types/opportunity';
+import type { ApplicationStatus } from '../../types/application';
 
 const LIMIT = 20;
 
@@ -76,10 +78,16 @@ export function OpportunitiesListPage() {
   const isStudent = currentUser?.role === 'estudiante';
 
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [appliedMap, setAppliedMap] = useState<Map<string, ApplicationStatus>>(new Map());
 
   useEffect(() => {
     if (!isStudent) return;
     savedApi.getIds().then((ids) => setSavedIds(new Set(ids))).catch(() => {});
+    applicationsApi.getMine().then((apps) => {
+      const map = new Map<string, ApplicationStatus>();
+      apps.forEach((a) => { if (a.opportunity?.id) map.set(a.opportunity.id, a.status); });
+      setAppliedMap(map);
+    }).catch(() => {});
   }, [isStudent]);
 
   const handleToggleSave = async (id: string, currentlySaved: boolean) => {
@@ -155,6 +163,7 @@ export function OpportunitiesListPage() {
           currentUserId={currentUser?.id}
           isSaved={savedIds.has(o.id)}
           onToggleSave={isStudent ? handleToggleSave : undefined}
+          appliedStatus={appliedMap.get(o.id)}
         />
       ))}
 

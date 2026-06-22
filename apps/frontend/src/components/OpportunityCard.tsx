@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Opportunity } from '../types/opportunity';
 import { OPPORTUNITY_TYPE_LABELS, OPPORTUNITY_STATUS_LABELS, OpportunityStatus } from '../types/opportunity';
+import { APPLICATION_STATUS_LABELS } from '../types/application';
+import type { ApplicationStatus } from '../types/application';
 
 const ROLE_LABELS: Record<string, string> = {
   estudiante: 'Estudiante',
@@ -11,17 +13,21 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 function relativeDate(dateStr: string): string {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
-  if (days === 0) return 'hoy';
-  if (days === 1) return 'ayer';
-  if (days < 7) return `hace ${days} días`;
-  if (days < 30) return `hace ${Math.floor(days / 7)} sem.`;
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
+  const days = Math.abs(diff);
+  if (days === 0) return 'Publicado hoy';
+  if (days === 1) return diff > 0 ? 'Publicado ayer' : 'Publicado mañana';
+  if (days < 7) return `Publicado hace ${days} días`;
+  if (days < 30) {
+    const w = Math.floor(days / 7);
+    return `Publicado hace ${w} sem.`;
+  }
   if (days < 365) {
     const m = Math.floor(days / 30);
-    return `hace ${m} mes${m > 1 ? 'es' : ''}`;
+    return `Publicado hace ${m} ${m === 1 ? 'mes' : 'meses'}`;
   }
   const y = Math.floor(days / 365);
-  return `hace ${y} año${y > 1 ? 's' : ''}`;
+  return `Publicado hace ${y} ${y === 1 ? 'año' : 'años'}`;
 }
 
 interface Props {
@@ -31,6 +37,7 @@ interface Props {
   currentUserId?: string;
   isSaved?: boolean;
   onToggleSave?: (id: string, currentlySaved: boolean) => Promise<void>;
+  appliedStatus?: ApplicationStatus;
 }
 
 export function OpportunityCard({
@@ -40,6 +47,7 @@ export function OpportunityCard({
   currentUserId,
   isSaved = false,
   onToggleSave,
+  appliedStatus,
 }: Props) {
   const [saved, setSaved] = useState(isSaved);
   const [savingInProgress, setSavingInProgress] = useState(false);
@@ -79,6 +87,14 @@ export function OpportunityCard({
             <span className={`badge badge-status-${opportunity.status}`}>
               {OPPORTUNITY_STATUS_LABELS[opportunity.status]}
             </span>
+            {appliedStatus && (
+              <span className="card-applied-badge" data-testid="applied-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                {APPLICATION_STATUS_LABELS[appliedStatus]}
+              </span>
+            )}
             <span className="card-date">{relativeDate(opportunity.createdAt)}</span>
             {onToggleSave && !isOwner && (
               <button
