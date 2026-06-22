@@ -46,9 +46,13 @@ def _grad_fill(fill_format, c1, c2, angle=90):
            f'<a:gs pos="100000"><a:srgbClr val="{c2}"/></a:gs>'
            f'</a:gsLst><a:lin ang="{ang}" scaled="1"/></a:gradFill>')
     el = etree.fromstring(xml)
-    ln = xpr.find(qn('a:ln'))
-    if ln is not None:
-        ln.addprevious(el)
+    # el relleno debe ir antes de <a:ln> (formas) o de <a:effectLst> (fondo bgPr);
+    # python-pptx deja un <a:effectLst/> en el bgPr, asi que no se puede solo append.
+    ref = xpr.find(qn('a:ln'))
+    if ref is None:
+        ref = xpr.find(qn('a:effectLst'))
+    if ref is not None:
+        ref.addprevious(el)
     else:
         xpr.append(el)
 
@@ -74,8 +78,14 @@ def _alpha_fill(shape, hexcolor, alpha):
             spPr.remove(e)
     xml = (f'<a:solidFill xmlns:a="{A}"><a:srgbClr val="{hexcolor}">'
            f'<a:alpha val="{alpha*1000}"/></a:srgbClr></a:solidFill>')
-    ln = spPr.find(qn('a:ln'))
-    (ln.addprevious if ln is not None else spPr.append)(etree.fromstring(xml))
+    el = etree.fromstring(xml)
+    ref = spPr.find(qn('a:ln'))
+    if ref is None:
+        ref = spPr.find(qn('a:effectLst'))
+    if ref is not None:
+        ref.addprevious(el)
+    else:
+        spPr.append(el)
 
 
 # ---------- helpers de alto nivel ----------
