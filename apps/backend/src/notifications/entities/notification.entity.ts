@@ -13,6 +13,7 @@ export enum NotificationType {
   APPLICATION_RESULT = 'application_result',
   APPLICATION_FEEDBACK = 'application_feedback',
   APPLICATION_SUBMITTED = 'application_submitted',
+  NEW_MESSAGE = 'new_message',
 }
 
 @Entity('notifications')

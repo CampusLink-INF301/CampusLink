@@ -397,6 +397,23 @@ export class ApplicationsService {
       sender: { id: userId } as User,
       content: dto.content,
     });
-    return this.messageRepo.save(message);
+    const saved = await this.messageRepo.save(message);
+
+    const recipientId = isApplicant
+      ? application.opportunity.publisher?.id
+      : application.user.id;
+    if (recipientId) {
+      const senderName = isApplicant
+        ? application.user.name ?? 'Un postulante'
+        : application.opportunity.publisher?.name ?? 'El publicador';
+      await this.notificationsService.create(
+        recipientId,
+        NotificationType.NEW_MESSAGE,
+        `Nuevo mensaje de ${senderName} en "${application.opportunity.title}".`,
+        applicationId,
+      );
+    }
+
+    return saved;
   }
 }

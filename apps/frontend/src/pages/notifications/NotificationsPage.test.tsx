@@ -1,4 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { NotificationsPage } from './NotificationsPage';
 import { notificationsApi } from '../../api/notifications';
 
@@ -27,7 +28,7 @@ beforeEach(() => {
 
 describe('NotificationsPage', () => {
   it('renders unread count and marks all as read', async () => {
-    render(<NotificationsPage />);
+    render(<MemoryRouter><NotificationsPage /></MemoryRouter>);
 
     await waitFor(() => expect(screen.getByText('Hola')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /marcar todas como leídas/i }));
@@ -36,7 +37,7 @@ describe('NotificationsPage', () => {
   });
 
   it('marks a single notification as read', async () => {
-    render(<NotificationsPage />);
+    render(<MemoryRouter><NotificationsPage /></MemoryRouter>);
 
     await waitFor(() => expect(screen.getByText('Hola')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /marcar como leída/i }));

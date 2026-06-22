@@ -26,7 +26,12 @@ export function Navbar() {
   useEffect(() => {
     fetchUnread();
     const interval = setInterval(fetchUnread, 60000);
-    return () => clearInterval(interval);
+    const onRead = () => fetchUnread();
+    window.addEventListener('notifications:read', onRead);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notifications:read', onRead);
+    };
   }, [fetchUnread]);
 
   const handleLogout = () => {
