@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../api/admin';
 import type { AdminUser } from '../../api/admin';
+import { ConfirmModal } from '../../components/ConfirmModal';
+import { useConfirm } from '../../hooks/useConfirm';
 
 const PAGE_SIZE = 10;
 
@@ -20,6 +22,7 @@ export function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { confirm, confirmProps } = useConfirm();
 
   const load = useCallback(async (currentPage: number, currentSearch: string) => {
     setLoading(true);
@@ -57,7 +60,15 @@ export function AdminUsersPage() {
 
   const handleSuspend = async (user: AdminUser) => {
     const action = user.suspended ? 'reactivar' : 'suspender';
-    if (!confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} a ${user.name}?`)) return;
+    const ok = await confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} usuario`,
+      message: user.suspended
+        ? `Se reactivará la cuenta de ${user.name} y podrá volver a usar la plataforma.`
+        : `Se suspenderá a ${user.name}. No podrá acceder a la plataforma hasta ser reactivado.`,
+      confirmLabel: action.charAt(0).toUpperCase() + action.slice(1),
+      variant: user.suspended ? 'info' : 'danger',
+    });
+    if (!ok) return;
     try {
       const updated = await adminApi.suspendUser(user.id, !user.suspended);
       setItems((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
@@ -138,6 +149,7 @@ export function AdminUsersPage() {
           </button>
         </div>
       )}
+      <ConfirmModal {...confirmProps} />
     </main>
   );
 }

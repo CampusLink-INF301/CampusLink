@@ -10,6 +10,8 @@ import {
   OpportunityStatus,
 } from '../../types/opportunity';
 import type { Opportunity } from '../../types/opportunity';
+import { ConfirmModal } from '../../components/ConfirmModal';
+import { useConfirm } from '../../hooks/useConfirm';
 
 const PAGE_SIZE = 10;
 
@@ -29,6 +31,7 @@ export function PublisherHistoryPage() {
   const [filterStatus, setFilterStatus] = useState<OpportunityStatus | ''>('');
   const [sortBy, setSortBy] = useState<'createdAt' | 'deadline' | 'status'>('createdAt');
   const [sortDir, setSortDir] = useState<'ASC' | 'DESC'>('DESC');
+  const { confirm, confirmProps } = useConfirm();
 
   const load = useCallback(
     async (currentPage: number) => {
@@ -75,7 +78,8 @@ export function PublisherHistoryPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar esta oportunidad?')) return;
+    const ok = await confirm({ title: 'Eliminar oportunidad', message: 'Se eliminará la oportunidad y se notificará a los postulantes. Esta acción no se puede deshacer.', confirmLabel: 'Eliminar', variant: 'danger' });
+    if (!ok) return;
     await opportunitiesApi.remove(id);
     void load(page);
   };
@@ -86,7 +90,8 @@ export function PublisherHistoryPage() {
   };
 
   const handleCloseApplications = async (id: string) => {
-    if (!confirm('¿Cerrar las postulaciones? Pasarán a evaluación y no se podrán recibir nuevas postulaciones.')) return;
+    const ok = await confirm({ title: 'Cerrar postulaciones', message: 'Los postulantes pasarán a evaluación y no se podrán recibir nuevas postulaciones.', confirmLabel: 'Cerrar postulaciones', variant: 'info' });
+    if (!ok) return;
     try {
       await opportunitiesApi.closeApplications(id);
       navigate(`/my-opportunities/${id}/applicants`);
@@ -222,6 +227,7 @@ export function PublisherHistoryPage() {
           </button>
         </div>
       )}
+      <ConfirmModal {...confirmProps} />
     </main>
   );
 }

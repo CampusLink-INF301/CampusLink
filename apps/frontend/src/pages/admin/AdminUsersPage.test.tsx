@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AdminUsersPage } from './AdminUsersPage';
 import { adminApi } from '../../api/admin';
@@ -43,12 +43,13 @@ function renderPage() {
 
 describe('AdminUsersPage', () => {
   it('loads and suspends users', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-
     renderPage();
 
     await waitFor(() => expect(screen.getByText('Ana')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('btn-suspend-u1'));
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'));
+    fireEvent.click(within(dialog).getByRole('button', { name: /suspender/i }));
 
     await waitFor(() => expect(mockedApi.suspendUser).toHaveBeenCalledWith('u1', true));
   });

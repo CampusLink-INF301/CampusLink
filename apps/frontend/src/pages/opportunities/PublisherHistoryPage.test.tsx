@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PublisherHistoryPage } from './PublisherHistoryPage';
 import { opportunitiesApi } from '../../api/opportunities';
@@ -72,7 +72,6 @@ describe('PublisherHistoryPage', () => {
   });
 
   it('shows applicants links and can delete an opportunity', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
     mockedApi.getMine.mockResolvedValueOnce({
       items: [
         {
@@ -107,6 +106,9 @@ describe('PublisherHistoryPage', () => {
 
     await waitFor(() => expect(screen.getByTestId('link-applicants-opp-1')).toBeInTheDocument());
     fireEvent.click(screen.getAllByRole('button', { name: /eliminar oportunidad/i })[0]);
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'));
+    fireEvent.click(within(dialog).getByRole('button', { name: /eliminar$/i }));
 
     await waitFor(() => expect(mockedApi.remove).toHaveBeenCalledWith('opp-1'));
   });

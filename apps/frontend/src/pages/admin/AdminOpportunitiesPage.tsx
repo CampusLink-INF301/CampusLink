@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../api/admin';
 import { OPPORTUNITY_TYPE_LABELS, OPPORTUNITY_STATUS_LABELS, OpportunityStatus } from '../../types/opportunity';
 import type { Opportunity } from '../../types/opportunity';
+import { ConfirmModal } from '../../components/ConfirmModal';
+import { useConfirm } from '../../hooks/useConfirm';
 
 const PAGE_SIZE = 10;
 
@@ -14,6 +16,7 @@ export function AdminOpportunitiesPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { confirm, confirmProps } = useConfirm();
 
   const load = useCallback(async (currentPage: number, currentSearch: string) => {
     setLoading(true);
@@ -52,7 +55,15 @@ export function AdminOpportunitiesPage() {
   const handleBlock = async (opp: Opportunity) => {
     const isBlocked = opp.status === OpportunityStatus.BLOQUEADA;
     const action = isBlocked ? 'desbloquear' : 'bloquear';
-    if (!confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} "${opp.title}"?`)) return;
+    const ok = await confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} oportunidad`,
+      message: isBlocked
+        ? `Se desbloqueará "${opp.title}" y volverá a estar visible para los estudiantes.`
+        : `Se bloqueará "${opp.title}" y dejará de ser visible para los estudiantes.`,
+      confirmLabel: action.charAt(0).toUpperCase() + action.slice(1),
+      variant: isBlocked ? 'info' : 'danger',
+    });
+    if (!ok) return;
     try {
       const updated = await adminApi.blockOpportunity(opp.id, !isBlocked);
       setItems((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
@@ -141,6 +152,7 @@ export function AdminOpportunitiesPage() {
           </button>
         </div>
       )}
+      <ConfirmModal {...confirmProps} />
     </main>
   );
 }

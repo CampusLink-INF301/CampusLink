@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AdminOpportunitiesPage } from './AdminOpportunitiesPage';
 import { adminApi } from '../../api/admin';
@@ -62,12 +62,13 @@ function renderPage() {
 
 describe('AdminOpportunitiesPage', () => {
   it('loads and blocks opportunities', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-
     renderPage();
 
     await waitFor(() => expect(screen.getByText('Tutoría')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('btn-block-o1'));
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'));
+    fireEvent.click(within(dialog).getByRole('button', { name: /bloquear/i }));
 
     await waitFor(() => expect(mockedApi.blockOpportunity).toHaveBeenCalledWith('o1', true));
   });
