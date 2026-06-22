@@ -34,6 +34,7 @@ interface Props {
   opportunity: Opportunity;
   onDelete?: (id: string) => void;
   onClone?: (id: string) => void;
+  onBlock?: (id: string, currentlyBlocked: boolean) => void;
   currentUserId?: string;
   isSaved?: boolean;
   onToggleSave?: (id: string, currentlySaved: boolean) => Promise<void>;
@@ -44,6 +45,7 @@ export function OpportunityCard({
   opportunity,
   onDelete,
   onClone,
+  onBlock,
   currentUserId,
   isSaved = false,
   onToggleSave,
@@ -58,6 +60,7 @@ export function OpportunityCard({
 
   const isOwner = !!(currentUserId && opportunity.publisher?.id === currentUserId);
   const isDisponible = opportunity.status === OpportunityStatus.DISPONIBLE;
+  const isBlocked = opportunity.status === OpportunityStatus.BLOQUEADA;
 
   const handleToggleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -173,6 +176,24 @@ export function OpportunityCard({
                     Eliminar
                   </button>
                 )}
+              </div>
+            )}
+            {onBlock && (
+              <div className="card-actions">
+                <button
+                  className={`btn btn-sm ${isBlocked ? 'btn-secondary' : 'btn-danger'}`}
+                  aria-label={isBlocked ? 'Desbloquear oportunidad' : 'Bloquear oportunidad'}
+                  onClick={() => onBlock(opportunity.id, isBlocked)}
+                  data-testid={`btn-block-${opportunity.id}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {isBlocked
+                      ? <><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></>
+                      : <><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></>
+                    }
+                  </svg>
+                  {isBlocked ? 'Desbloquear' : 'Bloquear'}
+                </button>
               </div>
             )}
           </div>

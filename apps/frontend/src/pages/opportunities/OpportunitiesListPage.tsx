@@ -2,9 +2,12 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { opportunitiesApi } from '../../api/opportunities';
 import { applicationsApi } from '../../api/applications';
+import { adminApi } from '../../api/admin';
 import { savedApi } from '../../api/saved';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import { SearchBar } from '../../components/SearchBar';
+import { ConfirmModal } from '../../components/ConfirmModal';
+import { useConfirm } from '../../hooks/useConfirm';
 import type { Opportunity, OpportunityType } from '../../types/opportunity';
 import type { ApplicationStatus } from '../../types/application';
 
@@ -76,6 +79,8 @@ export function OpportunitiesListPage() {
   const currentUser: { id: string; role: string } | null = storedUser ? JSON.parse(storedUser) : null;
   const isLoggedIn = !!localStorage.getItem('token');
   const isStudent = currentUser?.role === 'estudiante';
+  const isAdmin = currentUser?.role === 'admin';
+  const { confirm, confirmProps } = useConfirm();
 
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [appliedMap, setAppliedMap] = useState<Map<string, ApplicationStatus>>(new Map());
@@ -89,6 +94,29 @@ export function OpportunitiesListPage() {
       setAppliedMap(map);
     }).catch(() => {});
   }, [isStudent]);
+
+  const [adminItems, setAdminItems] = useState<Opportunity[]>([]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    adminApi.getOpportunities({ page: 1 }).then((data) => setAdminItems(data.items)).catch(() => {});
+  }, [isAdmin]);
+
+  const handleBlock = async (id: string, currentlyBlocked: boolean) => {
+    const action = currentlyBlocked ? 'desbloquear' : 'bloquear';
+    const ok = await confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} oportunidad`,
+      message: currentlyBlocked
+        ? 'Se desbloqueará y volverá a estar visible para los estudiantes.'
+        : 'Se bloqueará y dejará de ser visible para los estudiantes.',
+      confirmLabel: action.charAt(0).toUpperCase() + action.slice(1),
+      variant: currentlyBlocked ? 'info' : 'danger',
+    });
+    if (!ok) return;
+    const updated = await adminApi.blockOpportunity(id, !currentlyBlocked);
+    setItems((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    setAdminItems((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+  };
 
   const handleToggleSave = async (id: string, currentlySaved: boolean) => {
     if (currentlySaved) {
@@ -156,6 +184,18 @@ export function OpportunitiesListPage() {
         </div>
       )}
 
+      {isAdmin && adminItems.length > 0 && adminItems
+        .filter((o) => !items.some((i) => i.id === o.id))
+        .map((o) => (
+          <OpportunityCard
+            key={o.id}
+            opportunity={o}
+            currentUserId={currentUser?.id}
+            onBlock={handleBlock}
+          />
+        ))
+      }
+
       {items.map((o) => (
         <OpportunityCard
           key={o.id}
@@ -164,11 +204,13 @@ export function OpportunitiesListPage() {
           isSaved={savedIds.has(o.id)}
           onToggleSave={isStudent ? handleToggleSave : undefined}
           appliedStatus={appliedMap.get(o.id)}
+          onBlock={isAdmin ? handleBlock : undefined}
         />
       ))}
 
       {loading && <p className="loading-text">Cargando oportunidades…</p>}
 
+      <ConfirmModal {...confirmProps} />
       <div ref={sentinelRef} style={{ height: 1 }} />
     </main>
   );

@@ -79,7 +79,6 @@ describe('Navbar', () => {
     renderNavbar();
 
     expect(screen.getByText('Usuarios')).toBeInTheDocument();
-    expect(screen.getByText('Oportunidades (Admin)')).toBeInTheDocument();
     expect(screen.queryByText('Mi Perfil')).not.toBeInTheDocument();
     expect(mockedNotificationsApi.getUnreadCount).not.toHaveBeenCalled();
   });

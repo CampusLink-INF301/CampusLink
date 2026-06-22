@@ -60,10 +60,7 @@ export function Navbar() {
               </>
             )}
             {isAdmin && (
-              <>
-                <Link to="/admin/users" className="nav-link">Usuarios</Link>
-                <Link to="/admin/opportunities" className="nav-link">Oportunidades (Admin)</Link>
-              </>
+              <Link to="/admin/users" className="nav-link">Usuarios</Link>
             )}
             {!isAdmin && (
               <>
