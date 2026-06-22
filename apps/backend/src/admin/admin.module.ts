@@ -4,9 +4,10 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { User } from '../auth/entities/user.entity';
 import { Opportunity } from '../opportunities/entities/opportunity.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Opportunity])],
+  imports: [TypeOrmModule.forFeature([User, Opportunity]), NotificationsModule],
   controllers: [AdminController],
   providers: [AdminService],
 })

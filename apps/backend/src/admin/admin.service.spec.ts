@@ -8,6 +8,7 @@ import {
   OpportunityType,
   OpportunityStatus,
 } from '../opportunities/entities/opportunity.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const mockUserRepo = {
   findOne: jest.fn(),
@@ -57,6 +58,7 @@ describe('AdminService', () => {
         AdminService,
         { provide: getRepositoryToken(User), useValue: mockUserRepo },
         { provide: getRepositoryToken(Opportunity), useValue: mockOppRepo },
+        { provide: NotificationsService, useValue: { create: jest.fn() } },
       ],
     }).compile();
     service = module.get<AdminService>(AdminService);

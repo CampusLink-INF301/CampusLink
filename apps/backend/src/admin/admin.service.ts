@@ -10,6 +10,8 @@ import {
   Opportunity,
   OpportunityStatus,
 } from '../opportunities/entities/opportunity.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 const PAGE_SIZE = 10;
 
@@ -20,6 +22,7 @@ export class AdminService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(Opportunity)
     private readonly opportunityRepo: Repository<Opportunity>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findUsers(query: {
@@ -75,11 +78,28 @@ export class AdminService {
   }
 
   async blockOpportunity(id: string, blocked: boolean): Promise<Opportunity> {
-    const opp = await this.opportunityRepo.findOne({ where: { id } });
+    const opp = await this.opportunityRepo.findOne({
+      where: { id },
+      relations: ['publisher'],
+    });
     if (!opp) throw new NotFoundException(`Opportunity ${id} not found`);
     opp.status = blocked
       ? OpportunityStatus.BLOQUEADA
       : OpportunityStatus.DISPONIBLE;
-    return this.opportunityRepo.save(opp);
+    const saved = await this.opportunityRepo.save(opp);
+
+    if (opp.publisher) {
+      const message = blocked
+        ? `Tu oportunidad "${opp.title}" fue bloqueada por un administrador.`
+        : `Tu oportunidad "${opp.title}" fue desbloqueada por un administrador.`;
+      await this.notificationsService.create(
+        opp.publisher.id,
+        NotificationType.OPPORTUNITY_MODIFIED,
+        message,
+        id,
+      );
+    }
+
+    return saved;
   }
 }
