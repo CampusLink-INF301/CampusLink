@@ -9,11 +9,13 @@ test.describe('Delete opportunity', () => {
     await page.goto('/my-opportunities');
     await expect(page.getByText('E2E Para Eliminar')).toBeVisible();
 
-    page.on('dialog', (dialog) => dialog.accept());
     await page.getByText('E2E Para Eliminar')
       .locator('xpath=ancestor::article')
       .getByRole('button', { name: 'Eliminar oportunidad' })
       .click();
+
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('dialog').getByRole('button', { name: 'Eliminar' }).click();
 
     await expect(page.getByText('E2E Para Eliminar')).not.toBeVisible();
   });
